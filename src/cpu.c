@@ -23,19 +23,13 @@ void Cpu_reset(Cpu *cpu) {
     cpu->p |= 0x04;
 }
 
-void Cpu_loadRam(Cpu *cpu, char *filename){
-  FILE *fgame;
-  fgame = fopen(filename, "rb");
-  
-  //checking if file opened
-  if (fgame == NULL) {
-    printf("Couldn't open the file: %s\n", filename);
-    return;
-  }
-
-  fread(&(cpu->ram[0]), 1, 0x07FF, fgame);
-  fclose(fgame);
-
+void Cpu_loadRom(Cpu *cpu, unsigned char *prg_data){
+    //mapper 0
+    int i;
+    for (i = 0; i < 16384 * 2; i++) {
+        cpu->ram[0x8000 + i] = prg_data[i];
+    }
+    cpu->pc = 0xC000;
 }
 
 void Cpu_setFlag(Cpu *cpu, int flag) {
@@ -55,6 +49,9 @@ void Cpu_decode(Cpu *cpu) {
 
     //fetch opcode
     unsigned char opcode = cpu->ram[cpu->pc];
+    #ifdef DEBUG
+    printf("%04X  ")
+    #endif
     cpu->pc += 1;
 
     //reset number of cycles counter
@@ -545,6 +542,9 @@ void Cpu_tick(Cpu *cpu){
 void Cpu_mainLoop(Cpu *cpu) {
     while (1) {
         Cpu_decode(cpu);
+        #ifdef DEBUG
+        printf("A:%02X X:%02X Y%02X P%02X SP:%02X CYC:%u\n", cpu->a, cpu->x, cpu->y, cpu->p, cpu->s, cpu->cycleCounter)
+        #endif
         Cpu_tick(cpu);
     }
 }

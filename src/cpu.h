@@ -53,7 +53,7 @@ typedef struct {
 //cpu functions definitions
 void Cpu_powerUp(Cpu *cpu);
 void Cpu_reset(Cpu *cpu);
-void Cpu_loadRam(Cpu *cpu, char *filename);
+void Cpu_loadRom(Cpu *cpu, char *filename);
 void Cpu_setFlag(Cpu *cpu, int flag);
 void Cpu_clearFlag(Cpu *cpu, int flag);
 void Cpu_decode(Cpu *cpu);

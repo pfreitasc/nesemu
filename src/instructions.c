@@ -266,6 +266,9 @@ unsigned char popStack(Cpu *cpu){
 //instructions
 //transfer instructions
 void LDA(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("LDA ")
+    #endif
     cpu->a = fetchOperand(cpu, addr_mode);
     
     //setting Z and N flags
@@ -280,6 +283,9 @@ void LDA(Cpu *cpu, int addr_mode) {
 }
 
 void LDX(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("LDX ")
+    #endif
     cpu->x = fetchOperand(cpu, addr_mode);
     
     //setting Z and N flags
@@ -294,6 +300,9 @@ void LDX(Cpu *cpu, int addr_mode) {
 }
 
 void LDY(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("LDY ")
+    #endif
     cpu->y = fetchOperand(cpu, addr_mode);
     
     //setting Z and N flags
@@ -308,6 +317,9 @@ void LDY(Cpu *cpu, int addr_mode) {
 }
 
 void STA(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("STA ")
+    #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
     cpu->ram[addr] = cpu->a;
 
@@ -321,16 +333,25 @@ void STA(Cpu *cpu, int addr_mode) {
 }
 
 void STX(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("STX ")
+    #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
     cpu->ram[addr] = cpu->x;
 }
 
 void STY(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("STY ")
+    #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
     cpu->ram[addr] = cpu->y;
 }
 
 void TAX(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("TAX ")
+    #endif
     fetchOperand(cpu, addr_mode);
     cpu->x = cpu->a;
 
@@ -347,6 +368,9 @@ void TAX(Cpu *cpu, int addr_mode) {
 }
 
 void TAY(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("TAY ")
+    #endif
     fetchOperand(cpu, addr_mode);
     cpu->y = cpu->a;
     
@@ -363,6 +387,9 @@ void TAY(Cpu *cpu, int addr_mode) {
 }
 
 void TSX(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("TSX ")
+    #endif
     fetchOperand(cpu, addr_mode);
     cpu->x = cpu->s;
 
@@ -379,6 +406,9 @@ void TSX(Cpu *cpu, int addr_mode) {
 }
 
 void TXA(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("TXA ")
+    #endif
     fetchOperand(cpu, addr_mode);
     cpu->a = cpu->x;
 
@@ -395,11 +425,17 @@ void TXA(Cpu *cpu, int addr_mode) {
 }
 
 void TXS(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("TXS ")
+    #endif
     fetchOperand(cpu, addr_mode);
     cpu->s = cpu->x;
 }
 
 void TYA(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("TYA ")
+    #endif
     fetchOperand(cpu, addr_mode);
     cpu->a = cpu->y;
 
@@ -417,16 +453,25 @@ void TYA(Cpu *cpu, int addr_mode) {
 
 //stack instructions
 void PHA(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("PHA ")
+    #endif
     fetchOperand(cpu, addr_mode);
     pushStack(cpu, cpu->a);
 }
 
 void PHP(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("PHP ")
+    #endif
     fetchOperand(cpu, addr_mode);
     pushStack(cpu, cpu->p);
 }
 
 void PLA(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("PLA ")
+    #endif
     fetchOperand(cpu, addr_mode);
     cpu->a = popStack(cpu);
 
@@ -443,12 +488,18 @@ void PLA(Cpu *cpu, int addr_mode) {
 }
 
 void PLP(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("PLP ")
+    #endif
     fetchOperand(cpu, addr_mode);
     cpu->p = popStack(cpu);
 }
 
 //decrements & increments
 void DEC(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("DEC ")
+    #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
     cpu->ram[addr] -= 1;
     
@@ -471,6 +522,9 @@ void DEC(Cpu *cpu, int addr_mode) {
 }
 
 void DEX(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("DEX ")
+    #endif
     fetchOperand(cpu, addr_mode);
     cpu->x -= 1;
     
@@ -487,6 +541,9 @@ void DEX(Cpu *cpu, int addr_mode) {
 }
 
 void DEY(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("DEY ")
+    #endif
     fetchOperand(cpu, addr_mode);
     cpu->x -= 1;
     
@@ -503,6 +560,9 @@ void DEY(Cpu *cpu, int addr_mode) {
 }
 
 void INC(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("INC ")
+    #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
     cpu->ram[addr] += 1;
     
@@ -525,6 +585,9 @@ void INC(Cpu *cpu, int addr_mode) {
 }
 
 void INX(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("INX ")
+    #endif
     fetchOperand(cpu, addr_mode);
     cpu->x += 1;
     
@@ -541,6 +604,9 @@ void INX(Cpu *cpu, int addr_mode) {
 }
 
 void INY(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("INY ")
+    #endif
     fetchOperand(cpu, addr_mode);
     cpu->x += 1;
     
@@ -558,6 +624,9 @@ void INY(Cpu *cpu, int addr_mode) {
 
 //arithmetic operations
 void ADC(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("ADC ")
+    #endif
     unsigned char operand = fetchOperand(cpu, addr_mode);
     unsigned char prev_carry = cpu->p & 0x01;
     unsigned short result = (unsigned short) cpu->a + (unsigned short) operand + (unsigned short) prev_carry;
@@ -587,6 +656,9 @@ void ADC(Cpu *cpu, int addr_mode) {
 }
 
 void SBC(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("SBC ")
+    #endif
     unsigned char operand = fetchOperand(cpu, addr_mode);
     operand = ~operand;
     unsigned char prev_carry = cpu->p & 0x01;
@@ -618,6 +690,9 @@ void SBC(Cpu *cpu, int addr_mode) {
 
 //logical operations
 void AND(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("AND ")
+    #endif
     unsigned char operand = fetchOperand(cpu, addr_mode);
     cpu->a &= operand;
 
@@ -633,6 +708,9 @@ void AND(Cpu *cpu, int addr_mode) {
 }
 
 void EOR(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("EOR ")
+    #endif
     unsigned char operand = fetchOperand(cpu, addr_mode);
     cpu->a ^= operand;
 
@@ -648,6 +726,9 @@ void EOR(Cpu *cpu, int addr_mode) {
 }
 
 void ORA(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("ORA ")
+    #endif
     unsigned char operand = fetchOperand(cpu, addr_mode);
     cpu->a |= operand;
 
@@ -664,6 +745,9 @@ void ORA(Cpu *cpu, int addr_mode) {
 
 //shift & rotate instructions
 void ASL(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("ASL ")
+    #endif
     unsigned char shifted_bit;
     if (addr_mode == acc) {
         fetchOperand(cpu, addr_mode);
@@ -718,6 +802,9 @@ void ASL(Cpu *cpu, int addr_mode) {
 }
 
 void LSR(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("LSR ")
+    #endif
     unsigned char shifted_bit;
     if (addr_mode == acc) {
         fetchOperand(cpu, addr_mode);
@@ -772,6 +859,9 @@ void LSR(Cpu *cpu, int addr_mode) {
 }
 
 void ROL(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("ROL ")
+    #endif
     unsigned char shifted_bit;
     if (addr_mode == acc) {
         fetchOperand(cpu, addr_mode);
@@ -831,6 +921,9 @@ void ROL(Cpu *cpu, int addr_mode) {
 }
 
 void ROR(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("ROR ")
+    #endif
     unsigned char shifted_bit;
     if (addr_mode == acc) {
         fetchOperand(cpu, addr_mode);
@@ -891,42 +984,66 @@ void ROR(Cpu *cpu, int addr_mode) {
 
 //flag instructions
 void CLC(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("CLC ")
+    #endif
     fetchOperand(cpu, addr_mode);
     Cpu_clearFlag(cpu, C);
 }
 
 void CLD(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("CLD ")
+    #endif
     fetchOperand(cpu, addr_mode);
     Cpu_clearFlag(cpu, D);
 }
 
 void CLI(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("CLI ")
+    #endif
     fetchOperand(cpu, addr_mode);
     Cpu_clearFlag(cpu, I);
 }
 
 void CLV(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("CLV ")
+    #endif
     fetchOperand(cpu, addr_mode);
     Cpu_clearFlag(cpu, V);
 }
 
 void SEC(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("SEC ")
+    #endif
     fetchOperand(cpu, addr_mode);
     Cpu_setFlag(cpu, C);
 }
 
 void SED(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("SED ")
+    #endif
     fetchOperand(cpu, addr_mode);
     Cpu_setFlag(cpu, D);
 }
 
 void SEI(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("SEI ")
+    #endif
     fetchOperand(cpu, addr_mode);
     Cpu_setFlag(cpu, I);
 }
 
 //comparisons
 void CMP(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("CMP ")
+    #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
 
     if (cpu->a < cpu->ram[addr]) {
@@ -947,6 +1064,9 @@ void CMP(Cpu *cpu, int addr_mode) {
 }
 
 void CPX(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("CPX ")
+    #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
 
     if (cpu->x < cpu->ram[addr]) {
@@ -967,6 +1087,9 @@ void CPX(Cpu *cpu, int addr_mode) {
 }
 
 void CPY(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("CPY ")
+    #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
 
     if (cpu->y < cpu->ram[addr]) {
@@ -988,48 +1111,72 @@ void CPY(Cpu *cpu, int addr_mode) {
 
 //conditional branch instructions
 void BCC(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("BCC ")
+    #endif
     if (cpu->p & 0x01 == 0x00) {
         cpu->pc = fetchAddr(cpu, addr_mode);
     }
 }
 
 void BCS(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("BCS ")
+    #endif
     if (cpu->p & 0x01 == 0x01) {
         cpu->pc = fetchAddr(cpu, addr_mode);
     }
 }
 
 void BEQ(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("BEQ ")
+    #endif
     if (cpu->p & 0x02 == 0x20) {
         cpu->pc = fetchAddr(cpu, addr_mode);
     }
 }
 
 void BNE(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("BNE ")
+    #endif
     if (cpu->p & 0x02 == 0x00) {
         cpu->pc = fetchAddr(cpu, addr_mode);
     }
 }
 
 void BMI(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("BMI ")
+    #endif
     if (cpu->p & 0x80 == 0x80) {
         cpu->pc = fetchAddr(cpu, addr_mode);
     }
 }
 
 void BPL(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("BPL ")
+    #endif
     if (cpu->p & 0x80 == 0x00) {
         cpu->pc = fetchAddr(cpu, addr_mode);
     }
 }
 
 void BVC(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("BVC ")
+    #endif
     if (cpu->p & 0x40 == 0x00) {
         cpu->pc = fetchAddr(cpu, addr_mode);
     }
 }
 
 void BVS(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("BVS ")
+    #endif
     if (cpu->p & 0x40 == 0x40) {
         cpu->pc = fetchAddr(cpu, addr_mode);
     }
@@ -1037,6 +1184,9 @@ void BVS(Cpu *cpu, int addr_mode) {
 
 //jumps & subroutines
 void JMP(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("JMP ")
+    #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
     cpu->pc = addr;
 
@@ -1045,6 +1195,9 @@ void JMP(Cpu *cpu, int addr_mode) {
 }
 
 void JSR(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("JSR ")
+    #endif
     unsigned short jmp_addr = fetchAddr(cpu, addr_mode);
 
     unsigned short curr_addr = cpu->pc;
@@ -1062,6 +1215,9 @@ void JSR(Cpu *cpu, int addr_mode) {
 }
 
 void RTS(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("RTS ")
+    #endif
     fetchOperand(cpu, addr_mode);
     unsigned char ret_addr_l = popStack(cpu);
     unsigned char ret_addr_h = popStack(cpu);
@@ -1078,6 +1234,9 @@ void RTS(Cpu *cpu, int addr_mode) {
 
 //interrupts
 void BRK(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("BRK ")
+    #endif
     fetchOperand(cpu, addr_mode);
     unsigned short ret_addr = cpu->pc + 2;
 
@@ -1107,6 +1266,9 @@ void BRK(Cpu *cpu, int addr_mode) {
 
 
 void RTI(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("RTI ")
+    #endif
     fetchOperand(cpu, addr_mode);
     cpu->p = popStack(cpu);
     unsigned char ret_addr_l = popStack(cpu);
@@ -1125,6 +1287,9 @@ void RTI(Cpu *cpu, int addr_mode) {
 //other
 
 void BIT(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("BIT ")
+    #endif
     unsigned char operand = fetchOperand(cpu, addr_mode);
     operand &= 0xC0;
 
@@ -1141,6 +1306,9 @@ void BIT(Cpu *cpu, int addr_mode) {
 }
 
 void NOP(Cpu *cpu, int addr_mode) {
+    #ifdef DEBUG
+    printf("NOP ")
+    #endif
     fetchOperand(cpu, addr_mode);
 }
 
