@@ -1,0 +1,15 @@
+{
+    "makefile.extensionOutputFolder": "./.vscode",
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/pedro/Projects/TCC/nes/bin",
+            "binaryPath": "/home/pedro/Projects/TCC/nes/bin/cputest",
+            "binaryArgs": []
+        },
+        {
+            "cwd": "/home/pedro/Projects/TCC/nes/bin",
+            "binaryPath": "/home/pedro/Projects/TCC/nes/bin/nestest",
+            "binaryArgs": []
+        }
+    ]
+}
