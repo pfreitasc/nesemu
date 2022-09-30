@@ -1,7 +1,7 @@
 #ifndef CARTRIDGE_H
 #define CARTRIDGE_H
 
-typedef struct {
+typedef struct cartridge {
     unsigned char header[16];
     unsigned char prg_data[16384 * 15];
     unsigned char chr_data[8192 * 15];

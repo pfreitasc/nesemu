@@ -41,13 +41,13 @@ enum flag {
 
 
 //cpu struct definition
-typedef struct {
+typedef struct cpu {
     unsigned char a; //accumulator
     unsigned char x, y; //indexes
     unsigned short pc; //program counter
     unsigned short s; //stack pointer
     unsigned char p; //status register
-    unsigned short ram[0xFFFF]; //cpu memory
+    unsigned short mem[0xFFFF]; //cpu memory
     unsigned int cycleCounter; //number of cycles needed to execute current instruction
 } Cpu;
 

@@ -9,9 +9,9 @@ unsigned char mode_acc(Cpu *cpu) {
 }
 
 unsigned short mode_abs(Cpu *cpu) {
-    unsigned char ll = cpu->ram[cpu->pc];
+    unsigned char ll = cpu->mem[cpu->pc];
     cpu->pc += 1;
-    unsigned char hh = cpu->ram[cpu->pc];
+    unsigned char hh = cpu->mem[cpu->pc];
     cpu->pc += 1;
 
     unsigned short addr = 0 | hh;
@@ -24,9 +24,9 @@ unsigned short mode_abs(Cpu *cpu) {
 }
 
 unsigned short mode_absx(Cpu *cpu) {
-    unsigned char ll = cpu->ram[(cpu->pc) + (cpu->x)];
+    unsigned char ll = cpu->mem[(cpu->pc) + (cpu->x)];
     cpu->pc += 1;
-    unsigned char hh = cpu->ram[(cpu->pc) + (cpu->x)];
+    unsigned char hh = cpu->mem[(cpu->pc) + (cpu->x)];
     cpu->pc += 1;
 
     unsigned short addr = 0 | hh;
@@ -42,9 +42,9 @@ unsigned short mode_absx(Cpu *cpu) {
 }
 
 unsigned short mode_absy(Cpu *cpu) {
-    unsigned char ll = cpu->ram[(cpu->pc) + (cpu->y)];
+    unsigned char ll = cpu->mem[(cpu->pc) + (cpu->y)];
     cpu->pc += 1;
-    unsigned char hh = cpu->ram[(cpu->pc) + (cpu->y)];
+    unsigned char hh = cpu->mem[(cpu->pc) + (cpu->y)];
     cpu->pc += 1;
 
     unsigned short addr = 0 | hh;
@@ -61,7 +61,7 @@ unsigned short mode_absy(Cpu *cpu) {
 }
 
 unsigned char mode_imm(Cpu *cpu) {
-    unsigned char operand = cpu->ram[cpu->pc];
+    unsigned char operand = cpu->mem[cpu->pc];
     cpu->pc += 1;
 
     cpu->cycleCounter += 2;
@@ -75,10 +75,10 @@ unsigned char mode_impl(Cpu *cpu) {
 }
 
 unsigned short mode_ind(Cpu *cpu) {
-    unsigned char pointer_ll = cpu->ram[cpu->pc];
+    unsigned char pointer_ll = cpu->mem[cpu->pc];
     cpu->pc += 1;
 
-    unsigned char pointer_hh = cpu->ram[cpu->pc];
+    unsigned char pointer_hh = cpu->mem[cpu->pc];
     cpu->pc += 1;
     
     unsigned short pointer = 0 | pointer_hh;  
@@ -90,14 +90,14 @@ unsigned short mode_ind(Cpu *cpu) {
     //it takes from last of page and first of same page
     //ex: instead of reading from $C0FF/$C100 it reads from $C0FF/$C000
     if ((pointer & 0xFF) == 0xFF) {
-        addr |= cpu->ram[pointer];
+        addr |= cpu->mem[pointer];
         addr = addr << 8;
-        addr |= cpu->ram[(pointer & 0xFF00)];
+        addr |= cpu->mem[(pointer & 0xFF00)];
     }
     else {
-        addr |= cpu->ram[pointer];
+        addr |= cpu->mem[pointer];
         addr = addr << 8;
-        addr |= cpu->ram[pointer + 1];
+        addr |= cpu->mem[pointer + 1];
     }
 
     cpu->cycleCounter += 5;
@@ -106,11 +106,11 @@ unsigned short mode_ind(Cpu *cpu) {
 }
 
 unsigned short mode_indx(Cpu *cpu) {
-    unsigned char zpg_pointer = cpu->ram[cpu->pc];
+    unsigned char zpg_pointer = cpu->mem[cpu->pc];
     cpu->pc +=1;
 
-    unsigned char addr_ll = cpu->ram[zpg_pointer + cpu->x] & 0xFF;
-    unsigned char addr_hh = cpu->ram[zpg_pointer + cpu->x + 1] & 0xFF;
+    unsigned char addr_ll = cpu->mem[zpg_pointer + cpu->x] & 0xFF;
+    unsigned char addr_hh = cpu->mem[zpg_pointer + cpu->x + 1] & 0xFF;
     
     unsigned short addr = 0 | addr_hh;
     addr = addr << 8;
@@ -122,11 +122,11 @@ unsigned short mode_indx(Cpu *cpu) {
 }
 
 unsigned short mode_indy(Cpu *cpu) {
-    unsigned char zpg_pointer = cpu->ram[cpu->pc];
+    unsigned char zpg_pointer = cpu->mem[cpu->pc];
     cpu->pc +=1;
 
-    unsigned char addr_ll = cpu->ram[zpg_pointer] & 0xFF;
-    unsigned char addr_hh = cpu->ram[zpg_pointer + 1] & 0xFF;
+    unsigned char addr_ll = cpu->mem[zpg_pointer] & 0xFF;
+    unsigned char addr_hh = cpu->mem[zpg_pointer + 1] & 0xFF;
     
     unsigned short addr = 0 | addr_hh;
     addr = addr << 8;
@@ -142,7 +142,7 @@ unsigned short mode_indy(Cpu *cpu) {
 }
 
 unsigned short mode_rel(Cpu *cpu) {
-    char offset = cpu->ram[cpu->pc];
+    char offset = cpu->mem[cpu->pc];
     unsigned short addr;
 
     cpu->pc += 1;
@@ -164,7 +164,7 @@ unsigned short mode_rel(Cpu *cpu) {
 }
 
 unsigned short mode_zpg(Cpu *cpu) {
-    unsigned char ll = cpu->ram[cpu->pc];
+    unsigned char ll = cpu->mem[cpu->pc];
     cpu->pc += 1;
 
     unsigned short addr = 0 | ll;
@@ -175,7 +175,7 @@ unsigned short mode_zpg(Cpu *cpu) {
 }
 
 unsigned short mode_zpgx(Cpu *cpu) {
-    unsigned char ll = cpu->ram[(cpu->pc) + (cpu->x)];
+    unsigned char ll = cpu->mem[(cpu->pc) + (cpu->x)];
     cpu->pc += 1;
 
     unsigned short addr = 0 | ll;
@@ -186,7 +186,7 @@ unsigned short mode_zpgx(Cpu *cpu) {
 }
 
 unsigned short mode_zpgy(Cpu *cpu) {
-    unsigned char ll = cpu->ram[(cpu->pc) + (cpu->y)];
+    unsigned char ll = cpu->mem[(cpu->pc) + (cpu->y)];
     cpu->pc += 1;
 
     unsigned short addr = 0 | ll;
@@ -249,19 +249,19 @@ unsigned char fetchOperand(Cpu *cpu, int addr_mode) {
             operand = mode_impl(cpu);
             break;
         default:
-            operand = cpu->ram[fetchAddr(cpu, addr_mode)];
+            operand = cpu->mem[fetchAddr(cpu, addr_mode)];
     }
     return operand;
 }
 
 void pushStack(Cpu *cpu, unsigned char val){
-    cpu->ram[STACK_START + cpu->s] = val;
+    cpu->mem[STACK_START + cpu->s] = val;
     cpu->s -= 1;
 }
 
 unsigned char popStack(Cpu *cpu){
     cpu->s += 1;
-    return cpu->ram[STACK_START + cpu->s];
+    return cpu->mem[STACK_START + cpu->s];
 }
 
 //instructions
@@ -322,7 +322,7 @@ void STA(Cpu *cpu, int addr_mode) {
     printf("STA ");
     #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
-    cpu->ram[addr] = cpu->a;
+    cpu->mem[addr] = cpu->a;
 
     //timing adjustments
     if (addr_mode == absx)
@@ -338,7 +338,7 @@ void STX(Cpu *cpu, int addr_mode) {
     printf("STX ");
     #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
-    cpu->ram[addr] = cpu->x;
+    cpu->mem[addr] = cpu->x;
 }
 
 void STY(Cpu *cpu, int addr_mode) {
@@ -346,7 +346,7 @@ void STY(Cpu *cpu, int addr_mode) {
     printf("STY ");
     #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
-    cpu->ram[addr] = cpu->y;
+    cpu->mem[addr] = cpu->y;
 }
 
 void TAX(Cpu *cpu, int addr_mode) {
@@ -502,15 +502,15 @@ void DEC(Cpu *cpu, int addr_mode) {
     printf("DEC ");
     #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
-    cpu->ram[addr] -= 1;
+    cpu->mem[addr] -= 1;
     
     //setting Z and N flags
-    if (cpu->ram[addr] < 0)
+    if (cpu->mem[addr] < 0)
         Cpu_setFlag(cpu, N);
     else
         Cpu_clearFlag(cpu, N);
     
-    if (cpu->ram[addr] == 0)
+    if (cpu->mem[addr] == 0)
         Cpu_setFlag(cpu, Z);
     else 
         Cpu_clearFlag(cpu, Z);
@@ -565,15 +565,15 @@ void INC(Cpu *cpu, int addr_mode) {
     printf("INC ");
     #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
-    cpu->ram[addr] += 1;
+    cpu->mem[addr] += 1;
     
     //setting Z and N flags
-    if (cpu->ram[addr] < 0)
+    if (cpu->mem[addr] < 0)
         Cpu_setFlag(cpu, N);
     else
         Cpu_clearFlag(cpu, N);
     
-    if (cpu->ram[addr] == 0)
+    if (cpu->mem[addr] == 0)
         Cpu_setFlag(cpu, Z);
     else 
         Cpu_clearFlag(cpu, Z);
@@ -774,9 +774,9 @@ void ASL(Cpu *cpu, int addr_mode) {
         }
     else {
         unsigned short addr = fetchAddr(cpu, addr_mode);
-        shifted_bit = cpu->ram[addr] & 0x80;
+        shifted_bit = cpu->mem[addr] & 0x80;
 
-        cpu->ram[addr] = cpu->ram[addr] << 1;
+        cpu->mem[addr] = cpu->mem[addr] << 1;
 
         //setting C flag
         if (shifted_bit == 0x80)
@@ -785,11 +785,11 @@ void ASL(Cpu *cpu, int addr_mode) {
             Cpu_clearFlag(cpu, C);
         
         //setting Z and N flags
-        if (cpu->ram[addr] < 0)
+        if (cpu->mem[addr] < 0)
             Cpu_setFlag(cpu, N);
         else
             Cpu_clearFlag(cpu, N);
-        if (cpu->ram[addr] == 0)
+        if (cpu->mem[addr] == 0)
             Cpu_setFlag(cpu, Z);
         else 
             Cpu_clearFlag(cpu, Z);
@@ -831,9 +831,9 @@ void LSR(Cpu *cpu, int addr_mode) {
         }
     else {
         unsigned short addr = fetchAddr(cpu, addr_mode);
-        shifted_bit = cpu->ram[addr] & 0x01;
+        shifted_bit = cpu->mem[addr] & 0x01;
 
-        cpu->ram[addr] = cpu->ram[addr] << 1;
+        cpu->mem[addr] = cpu->mem[addr] << 1;
 
         //setting C flag
         if (shifted_bit == 0x01)
@@ -842,11 +842,11 @@ void LSR(Cpu *cpu, int addr_mode) {
             Cpu_clearFlag(cpu, C);
         
         //setting Z and N flags
-        if (cpu->ram[addr] < 0)
+        if (cpu->mem[addr] < 0)
             Cpu_setFlag(cpu, N);
         else
             Cpu_clearFlag(cpu, N);
-        if (cpu->ram[addr] == 0)
+        if (cpu->mem[addr] == 0)
             Cpu_setFlag(cpu, Z);
         else 
             Cpu_clearFlag(cpu, Z);
@@ -891,11 +891,11 @@ void ROL(Cpu *cpu, int addr_mode) {
     else {
         unsigned short addr = fetchAddr(cpu, addr_mode);
 
-        shifted_bit = cpu->ram[addr] & 0x80;
+        shifted_bit = cpu->mem[addr] & 0x80;
         shifted_bit = shifted_bit >> 7;
 
-        cpu->ram[addr] = cpu->ram[addr] << 1;
-        cpu->ram[addr] |= shifted_bit;
+        cpu->mem[addr] = cpu->mem[addr] << 1;
+        cpu->mem[addr] |= shifted_bit;
 
         //setting C flag
         if (shifted_bit == 0x01)
@@ -904,11 +904,11 @@ void ROL(Cpu *cpu, int addr_mode) {
             Cpu_clearFlag(cpu, C);
         
         //setting Z and N flags
-        if (cpu->ram[addr] < 0)
+        if (cpu->mem[addr] < 0)
             Cpu_setFlag(cpu, N);
         else
             Cpu_clearFlag(cpu, N);
-        if (cpu->ram[addr] == 0)
+        if (cpu->mem[addr] == 0)
             Cpu_setFlag(cpu, Z);
         else 
             Cpu_clearFlag(cpu, Z);
@@ -953,11 +953,11 @@ void ROR(Cpu *cpu, int addr_mode) {
     else {
         unsigned short addr = fetchAddr(cpu, addr_mode);
 
-        shifted_bit = cpu->ram[addr] & 0x01;
+        shifted_bit = cpu->mem[addr] & 0x01;
         shifted_bit = shifted_bit << 7;
 
-        cpu->ram[addr] = cpu->ram[addr] >> 1;
-        cpu->ram[addr] |= shifted_bit;
+        cpu->mem[addr] = cpu->mem[addr] >> 1;
+        cpu->mem[addr] |= shifted_bit;
 
         //setting C flag
         if (shifted_bit == 0x80)
@@ -966,11 +966,11 @@ void ROR(Cpu *cpu, int addr_mode) {
             Cpu_clearFlag(cpu, C);
         
         //setting Z and N flags
-        if (cpu->ram[addr] < 0)
+        if (cpu->mem[addr] < 0)
             Cpu_setFlag(cpu, N);
         else
             Cpu_clearFlag(cpu, N);
-        if (cpu->ram[addr] == 0)
+        if (cpu->mem[addr] == 0)
             Cpu_setFlag(cpu, Z);
         else 
             Cpu_clearFlag(cpu, Z);
@@ -1047,12 +1047,12 @@ void CMP(Cpu *cpu, int addr_mode) {
     #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
 
-    if (cpu->a < cpu->ram[addr]) {
+    if (cpu->a < cpu->mem[addr]) {
         Cpu_clearFlag(cpu, Z);
         Cpu_clearFlag(cpu, C);
         Cpu_setFlag(cpu, N);
     }
-    else if (cpu->a == cpu->ram[addr]) {
+    else if (cpu->a == cpu->mem[addr]) {
         Cpu_setFlag(cpu, Z);
         Cpu_setFlag(cpu, C);
         Cpu_clearFlag(cpu, N);
@@ -1070,12 +1070,12 @@ void CPX(Cpu *cpu, int addr_mode) {
     #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
 
-    if (cpu->x < cpu->ram[addr]) {
+    if (cpu->x < cpu->mem[addr]) {
         Cpu_clearFlag(cpu, Z);
         Cpu_clearFlag(cpu, C);
         Cpu_setFlag(cpu, N);
     }
-    else if (cpu->x == cpu->ram[addr]) {
+    else if (cpu->x == cpu->mem[addr]) {
         Cpu_setFlag(cpu, Z);
         Cpu_setFlag(cpu, C);
         Cpu_clearFlag(cpu, N);
@@ -1093,12 +1093,12 @@ void CPY(Cpu *cpu, int addr_mode) {
     #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
 
-    if (cpu->y < cpu->ram[addr]) {
+    if (cpu->y < cpu->mem[addr]) {
         Cpu_clearFlag(cpu, Z);
         Cpu_clearFlag(cpu, C);
         Cpu_setFlag(cpu, N);
     }
-    else if (cpu->y == cpu->ram[addr]) {
+    else if (cpu->y == cpu->mem[addr]) {
         Cpu_setFlag(cpu, Z);
         Cpu_setFlag(cpu, C);
         Cpu_clearFlag(cpu, N);
@@ -1270,12 +1270,12 @@ void BRK(Cpu *cpu, int addr_mode) {
     cpu->p |= 1 >> I;
 
     
-    unsigned char pointer_ll = cpu->ram[IRQ_START];
-    unsigned char pointer_hh = cpu->ram[IRQ_START + 1];
+    unsigned char pointer_ll = cpu->mem[IRQ_START];
+    unsigned char pointer_hh = cpu->mem[IRQ_START + 1];
     unsigned short pointer = 0 | pointer_hh;  
     pointer = pointer << 8;
     pointer |= pointer_ll;
-    cpu->pc = cpu->ram[pointer];
+    cpu->pc = cpu->mem[pointer];
 
     //timing adjustments
     cpu->cycleCounter += 5;

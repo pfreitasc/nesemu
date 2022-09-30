@@ -11,7 +11,7 @@ void Cpu_powerUp(Cpu *cpu) {
 
     int i;
     for (i = 0; i < 0xFFFF; i++)
-        cpu->ram[i] = 0;
+        cpu->mem[i] = 0;
 
 }
 
@@ -27,7 +27,7 @@ void Cpu_loadRom(Cpu *cpu, unsigned char *prg_data){
     //mapper 0
     int i;
     for (i = 0; i < 16384 * 2; i++) {
-        cpu->ram[0x8000 + i] = prg_data[i];
+        cpu->mem[0x8000 + i] = prg_data[i];
     }
     cpu->pc = 0xC000;
 }
@@ -48,7 +48,7 @@ void Cpu_clearFlag(Cpu *cpu, int flag) {
 void Cpu_decode(Cpu *cpu) {
 
     //fetch opcode
-    unsigned char opcode = cpu->ram[cpu->pc];
+    unsigned char opcode = cpu->mem[cpu->pc];
     #ifdef DEBUG
     printf("%04X  ", cpu->pc);
     #endif
