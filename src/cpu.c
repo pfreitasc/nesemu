@@ -486,7 +486,7 @@ void Cpu_decode(Cpu *cpu) {
             INC(cpu, zpg);
             break;
         case 0xe8:
-            INX(cpu, zpg);
+            INX(cpu, impl);
             break;
         case 0xe9:
             SBC(cpu, imm);

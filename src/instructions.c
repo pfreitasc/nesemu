@@ -110,17 +110,21 @@ unsigned short mode_ind(Cpu *cpu) {
 }
 
 unsigned short mode_indx(Cpu *cpu) {
-    unsigned char zpg_pointer = cpu->mem[cpu->pc];
+    unsigned char zpg_pointer = cpu->mem[cpu->pc] + cpu->x;
     cpu->pc +=1;
 
-    unsigned char addr_ll = cpu->mem[zpg_pointer + cpu->x] & 0xFF;
-    unsigned char addr_hh = cpu->mem[zpg_pointer + cpu->x + 1] & 0xFF;
-    
+    unsigned char addr_ll = cpu->mem[zpg_pointer] & 0xFF;
+    unsigned char addr_hh = cpu->mem[zpg_pointer + 1] & 0xFF;
+
     unsigned short addr = 0 | addr_hh;
     addr = addr << 8;
     addr |= addr_ll;
 
     cpu->cycleCounter += 6;
+
+    #ifdef DEBUG
+    printf("($%02X,X) @ %02X = %02X%02X ", cpu->mem[cpu->pc], zpg_pointer, addr_hh, addr_ll);
+    #endif
 
     return addr;
 }
@@ -271,11 +275,12 @@ unsigned char popStack(Cpu *cpu){
 //instructions
 //transfer instructions
 void LDA(Cpu *cpu, int addr_mode) {
+    cpu->a = fetchOperand(cpu, addr_mode);
+    
     #ifdef DEBUG
     printf("LDA ");
     debug_print(cpu);
     #endif
-    cpu->a = fetchOperand(cpu, addr_mode);
     
     //setting Z and N flags
     if ((cpu->a & 0x80) == 0x80)
