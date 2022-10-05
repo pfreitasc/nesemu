@@ -1,5 +1,9 @@
 #include "instructions.h"
 
+
+void debug_print(Cpu *cpu){
+    printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%u\n", cpu->a, cpu->x, cpu->y, cpu->p, cpu->s, cpu->totalCyclesCounter);
+}
 //more info on https://www.masswerk.at/6502/6502_instruction_set.html
 
 //address mode fuctions
@@ -269,11 +273,12 @@ unsigned char popStack(Cpu *cpu){
 void LDA(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("LDA ");
+    debug_print(cpu);
     #endif
     cpu->a = fetchOperand(cpu, addr_mode);
     
     //setting Z and N flags
-    if (cpu->a < 0)
+    if ((cpu->a & 0x80) == 0x80)
         Cpu_setFlag(cpu, N);
     else
         Cpu_clearFlag(cpu, N);
@@ -286,11 +291,12 @@ void LDA(Cpu *cpu, int addr_mode) {
 void LDX(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("LDX ");
+    debug_print(cpu);
     #endif
     cpu->x = fetchOperand(cpu, addr_mode);
     
     //setting Z and N flags
-    if (cpu->x < 0)
+    if ((cpu->x & 0x80) == 0x80)
         Cpu_setFlag(cpu, N);
     else
         Cpu_clearFlag(cpu, N);
@@ -303,11 +309,12 @@ void LDX(Cpu *cpu, int addr_mode) {
 void LDY(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("LDY ");
+    debug_print(cpu);
     #endif
     cpu->y = fetchOperand(cpu, addr_mode);
     
     //setting Z and N flags
-    if (cpu->y < 0)
+    if ((cpu->y & 0x80) == 0x80)
         Cpu_setFlag(cpu, N);
     else
         Cpu_clearFlag(cpu, N);
@@ -320,6 +327,7 @@ void LDY(Cpu *cpu, int addr_mode) {
 void STA(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("STA ");
+    debug_print(cpu);
     #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
     cpu->mem[addr] = cpu->a;
@@ -331,11 +339,14 @@ void STA(Cpu *cpu, int addr_mode) {
         cpu->cycleCounter = 5;
     else if (addr_mode == indy)
         cpu->cycleCounter = 6;
+    
+    
 }
 
 void STX(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("STX ");
+    debug_print(cpu);
     #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
     cpu->mem[addr] = cpu->x;
@@ -344,6 +355,7 @@ void STX(Cpu *cpu, int addr_mode) {
 void STY(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("STY ");
+    debug_print(cpu);
     #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
     cpu->mem[addr] = cpu->y;
@@ -352,6 +364,7 @@ void STY(Cpu *cpu, int addr_mode) {
 void TAX(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("TAX ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
     cpu->x = cpu->a;
@@ -371,12 +384,13 @@ void TAX(Cpu *cpu, int addr_mode) {
 void TAY(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("TAY ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
     cpu->y = cpu->a;
     
     //setting Z and N flags
-    if (cpu->y < 0)
+    if ((cpu->y & 0x80) == 0x80)
         Cpu_setFlag(cpu, N);
     else
         Cpu_clearFlag(cpu, N);
@@ -390,12 +404,13 @@ void TAY(Cpu *cpu, int addr_mode) {
 void TSX(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("TSX ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
     cpu->x = cpu->s;
 
     //setting Z and N flags
-    if (cpu->x < 0)
+    if ((cpu->x & 0x80) == 0x80)
         Cpu_setFlag(cpu, N);
     else
         Cpu_clearFlag(cpu, N);
@@ -409,12 +424,13 @@ void TSX(Cpu *cpu, int addr_mode) {
 void TXA(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("TXA ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
     cpu->a = cpu->x;
 
     //setting Z and N flags
-    if (cpu->a < 0)
+    if ((cpu->a & 0x80) == 0x80)
         Cpu_setFlag(cpu, N);
     else
         Cpu_clearFlag(cpu, N);
@@ -428,6 +444,7 @@ void TXA(Cpu *cpu, int addr_mode) {
 void TXS(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("TXS ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
     cpu->s = cpu->x;
@@ -436,12 +453,13 @@ void TXS(Cpu *cpu, int addr_mode) {
 void TYA(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("TYA ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
     cpu->a = cpu->y;
 
     //setting Z and N flags
-    if (cpu->a < 0)
+    if ((cpu->a & 0x80) == 0x80)
         Cpu_setFlag(cpu, N);
     else
         Cpu_clearFlag(cpu, N);
@@ -456,6 +474,7 @@ void TYA(Cpu *cpu, int addr_mode) {
 void PHA(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("PHA ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
     pushStack(cpu, cpu->a);
@@ -464,20 +483,22 @@ void PHA(Cpu *cpu, int addr_mode) {
 void PHP(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("PHP ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
-    pushStack(cpu, cpu->p);
+    pushStack(cpu, (cpu->p | 0x10));
 }
 
 void PLA(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("PLA ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
     cpu->a = popStack(cpu);
 
     //setting Z and N flags
-    if (cpu->a < 0)
+    if ((cpu->a & 0x80) == 0x80)
         Cpu_setFlag(cpu, N);
     else
         Cpu_clearFlag(cpu, N);
@@ -491,21 +512,25 @@ void PLA(Cpu *cpu, int addr_mode) {
 void PLP(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("PLP ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
     cpu->p = popStack(cpu);
+    Cpu_clearFlag(cpu, B);
+    Cpu_setFlag(cpu, Ignored);
 }
 
 //decrements & increments
 void DEC(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("DEC ");
+    debug_print(cpu);
     #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
     cpu->mem[addr] -= 1;
     
     //setting Z and N flags
-    if (cpu->mem[addr] < 0)
+    if ((cpu->mem[addr] & 0x80) == 0x80)
         Cpu_setFlag(cpu, N);
     else
         Cpu_clearFlag(cpu, N);
@@ -525,12 +550,13 @@ void DEC(Cpu *cpu, int addr_mode) {
 void DEX(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("DEX ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
     cpu->x -= 1;
     
     //setting Z and N flags
-    if (cpu->x < 0)
+    if ((cpu->x & 0x80) == 0x80)
         Cpu_setFlag(cpu, N);
     else
         Cpu_clearFlag(cpu, N);
@@ -544,12 +570,13 @@ void DEX(Cpu *cpu, int addr_mode) {
 void DEY(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("DEY ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
     cpu->x -= 1;
     
     //setting Z and N flags
-    if (cpu->y < 0)
+    if ((cpu->y & 0x80) == 0x80)
         Cpu_setFlag(cpu, N);
     else
         Cpu_clearFlag(cpu, N);
@@ -563,12 +590,13 @@ void DEY(Cpu *cpu, int addr_mode) {
 void INC(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("INC ");
+    debug_print(cpu);
     #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
     cpu->mem[addr] += 1;
     
     //setting Z and N flags
-    if (cpu->mem[addr] < 0)
+    if ((cpu->mem[addr] & 0x80) == 0x80)
         Cpu_setFlag(cpu, N);
     else
         Cpu_clearFlag(cpu, N);
@@ -588,12 +616,13 @@ void INC(Cpu *cpu, int addr_mode) {
 void INX(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("INX ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
     cpu->x += 1;
     
     //setting Z and N flags
-    if (cpu->x < 0)
+    if ((cpu->x & 0x80) == 0x80)
         Cpu_setFlag(cpu, N);
     else
         Cpu_clearFlag(cpu, N);
@@ -607,12 +636,13 @@ void INX(Cpu *cpu, int addr_mode) {
 void INY(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("INY ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
-    cpu->x += 1;
+    cpu->y += 1;
     
     //setting Z and N flags
-    if (cpu->y < 0)
+    if ((cpu->y & 0x80) == 0x80)
         Cpu_setFlag(cpu, N);
     else
         Cpu_clearFlag(cpu, N);
@@ -627,6 +657,7 @@ void INY(Cpu *cpu, int addr_mode) {
 void ADC(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("ADC ");
+    debug_print(cpu);
     #endif
     unsigned char operand = fetchOperand(cpu, addr_mode);
     unsigned char prev_carry = cpu->p & 0x01;
@@ -634,15 +665,21 @@ void ADC(Cpu *cpu, int addr_mode) {
 
     //setting carry flag
     cpu->p &= 0xFE;
-    if ((result & 0x0100) == 0x0100)
-        cpu->p |= 0x01;
+    if ((result & 0xFF00) != 0)
+        Cpu_setFlag(cpu, C);
+    
+    //setting V flag
+    if ((~((unsigned short) cpu->a ^ (unsigned short) operand) & ((unsigned short) cpu->a ^ result)) & 0x0080)
+        Cpu_setFlag(cpu, V);
+    else
+        Cpu_clearFlag(cpu, V);
 
     //saving result on acc
     result &= 0x00FF;
     cpu->a = (unsigned char) result;
 
     //setting Z and N flags
-    if (cpu->a < 0)
+    if ((cpu->a & 0x80) == 0x80)
         Cpu_setFlag(cpu, N);
     else
         Cpu_clearFlag(cpu, N);
@@ -650,15 +687,12 @@ void ADC(Cpu *cpu, int addr_mode) {
         Cpu_setFlag(cpu, Z);
     else 
         Cpu_clearFlag(cpu, Z);
-    
-    //setting V flag
-    if ((cpu->a ^ result) & (operand ^ result) & 0x80)
-        Cpu_setFlag(cpu, V);
 }
 
 void SBC(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("SBC ");
+    debug_print(cpu);
     #endif
     unsigned char operand = fetchOperand(cpu, addr_mode);
     operand = ~operand;
@@ -666,16 +700,23 @@ void SBC(Cpu *cpu, int addr_mode) {
     unsigned short result = (unsigned short) cpu->a + (unsigned short) operand + (unsigned short) prev_carry;
 
     //setting carry flag
-    cpu->p &= 0xFE;
-    if ((result & 0x0100) == 0x0100)
-        cpu->p |= 0x01;
+    if ((result & 0xFF00) != 0)
+        Cpu_setFlag(cpu, C);
+    else
+        Cpu_clearFlag(cpu, C);
+    
+    //setting V flag
+    if ((cpu->a ^ result) & (operand ^ result) & 0x80)
+        Cpu_setFlag(cpu, V);
+    else
+        Cpu_clearFlag(cpu, V);
 
     //saving result on acc
     result &= 0x00FF;
     cpu->a = (unsigned char) result;
 
     //setting Z and N flags
-    if (cpu->a < 0)
+    if ((cpu->a & 0x80) == 0x80)
         Cpu_setFlag(cpu, N);
     else
         Cpu_clearFlag(cpu, N);
@@ -683,22 +724,19 @@ void SBC(Cpu *cpu, int addr_mode) {
         Cpu_setFlag(cpu, Z);
     else 
         Cpu_clearFlag(cpu, Z);
-    
-    //setting V flag
-    if ((cpu->a ^ result) & (operand ^ result) & 0x80)
-        Cpu_setFlag(cpu, V);
 }
 
 //logical operations
 void AND(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("AND ");
+    debug_print(cpu);
     #endif
     unsigned char operand = fetchOperand(cpu, addr_mode);
     cpu->a &= operand;
 
     //setting Z and N flags
-    if (cpu->a < 0)
+    if ((cpu->a & 0x80) == 0x80)
         Cpu_setFlag(cpu, N);
     else
         Cpu_clearFlag(cpu, N);
@@ -711,12 +749,13 @@ void AND(Cpu *cpu, int addr_mode) {
 void EOR(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("EOR ");
+    debug_print(cpu);
     #endif
     unsigned char operand = fetchOperand(cpu, addr_mode);
     cpu->a ^= operand;
 
     //setting Z and N flags
-    if (cpu->a < 0)
+    if ((cpu->a & 0x80) == 0x80)
         Cpu_setFlag(cpu, N);
     else
         Cpu_clearFlag(cpu, N);
@@ -729,12 +768,13 @@ void EOR(Cpu *cpu, int addr_mode) {
 void ORA(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("ORA ");
+    debug_print(cpu);
     #endif
     unsigned char operand = fetchOperand(cpu, addr_mode);
     cpu->a |= operand;
 
     //setting Z and N flags
-    if (cpu->a < 0)
+    if ((cpu->a & 0x80) == 0x80)
         Cpu_setFlag(cpu, N);
     else
         Cpu_clearFlag(cpu, N);
@@ -748,6 +788,7 @@ void ORA(Cpu *cpu, int addr_mode) {
 void ASL(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("ASL ");
+    debug_print(cpu);
     #endif
     unsigned char shifted_bit;
     if (addr_mode == acc) {
@@ -763,7 +804,7 @@ void ASL(Cpu *cpu, int addr_mode) {
             Cpu_clearFlag(cpu, C);
         
         //setting Z and N flags
-        if (cpu->a < 0)
+        if ((cpu->a & 0x80) == 0x80)
             Cpu_setFlag(cpu, N);
         else
             Cpu_clearFlag(cpu, N);
@@ -785,7 +826,7 @@ void ASL(Cpu *cpu, int addr_mode) {
             Cpu_clearFlag(cpu, C);
         
         //setting Z and N flags
-        if (cpu->mem[addr] < 0)
+        if ((cpu->mem[addr] & 0x80) == 0x80)
             Cpu_setFlag(cpu, N);
         else
             Cpu_clearFlag(cpu, N);
@@ -805,6 +846,7 @@ void ASL(Cpu *cpu, int addr_mode) {
 void LSR(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("LSR ");
+    debug_print(cpu);
     #endif
     unsigned char shifted_bit;
     if (addr_mode == acc) {
@@ -820,7 +862,7 @@ void LSR(Cpu *cpu, int addr_mode) {
             Cpu_clearFlag(cpu, C);
         
         //setting Z and N flags
-        if (cpu->a < 0)
+        if ((cpu->a & 0x80) == 0x80)
             Cpu_setFlag(cpu, N);
         else
             Cpu_clearFlag(cpu, N);
@@ -842,7 +884,7 @@ void LSR(Cpu *cpu, int addr_mode) {
             Cpu_clearFlag(cpu, C);
         
         //setting Z and N flags
-        if (cpu->mem[addr] < 0)
+        if ((cpu->mem[addr] & 0x80) == 0x80)
             Cpu_setFlag(cpu, N);
         else
             Cpu_clearFlag(cpu, N);
@@ -862,6 +904,7 @@ void LSR(Cpu *cpu, int addr_mode) {
 void ROL(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("ROL ");
+    debug_print(cpu);
     #endif
     unsigned char shifted_bit;
     if (addr_mode == acc) {
@@ -879,7 +922,7 @@ void ROL(Cpu *cpu, int addr_mode) {
             Cpu_clearFlag(cpu, C);
         
         //setting Z and N flags
-        if (cpu->a < 0)
+        if ((cpu->a & 0x80) == 0x80)
             Cpu_setFlag(cpu, N);
         else
             Cpu_clearFlag(cpu, N);
@@ -904,7 +947,7 @@ void ROL(Cpu *cpu, int addr_mode) {
             Cpu_clearFlag(cpu, C);
         
         //setting Z and N flags
-        if (cpu->mem[addr] < 0)
+        if ((cpu->mem[addr] & 0x80) == 0x80)
             Cpu_setFlag(cpu, N);
         else
             Cpu_clearFlag(cpu, N);
@@ -924,6 +967,7 @@ void ROL(Cpu *cpu, int addr_mode) {
 void ROR(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("ROR ");
+    debug_print(cpu);
     #endif
     unsigned char shifted_bit;
     if (addr_mode == acc) {
@@ -941,7 +985,7 @@ void ROR(Cpu *cpu, int addr_mode) {
             Cpu_clearFlag(cpu, C);
         
         //setting Z and N flags
-        if (cpu->a < 0)
+        if ((cpu->a & 0x80) == 0x80)
             Cpu_setFlag(cpu, N);
         else
             Cpu_clearFlag(cpu, N);
@@ -966,7 +1010,7 @@ void ROR(Cpu *cpu, int addr_mode) {
             Cpu_clearFlag(cpu, C);
         
         //setting Z and N flags
-        if (cpu->mem[addr] < 0)
+        if ((cpu->mem[addr] & 0x80) == 0x80)
             Cpu_setFlag(cpu, N);
         else
             Cpu_clearFlag(cpu, N);
@@ -987,6 +1031,7 @@ void ROR(Cpu *cpu, int addr_mode) {
 void CLC(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("CLC ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
     Cpu_clearFlag(cpu, C);
@@ -995,6 +1040,7 @@ void CLC(Cpu *cpu, int addr_mode) {
 void CLD(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("CLD ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
     Cpu_clearFlag(cpu, D);
@@ -1003,6 +1049,7 @@ void CLD(Cpu *cpu, int addr_mode) {
 void CLI(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("CLI ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
     Cpu_clearFlag(cpu, I);
@@ -1011,6 +1058,7 @@ void CLI(Cpu *cpu, int addr_mode) {
 void CLV(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("CLV ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
     Cpu_clearFlag(cpu, V);
@@ -1019,6 +1067,7 @@ void CLV(Cpu *cpu, int addr_mode) {
 void SEC(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("SEC ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
     Cpu_setFlag(cpu, C);
@@ -1027,6 +1076,7 @@ void SEC(Cpu *cpu, int addr_mode) {
 void SED(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("SED ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
     Cpu_setFlag(cpu, D);
@@ -1035,6 +1085,7 @@ void SED(Cpu *cpu, int addr_mode) {
 void SEI(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("SEI ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
     Cpu_setFlag(cpu, I);
@@ -1044,76 +1095,92 @@ void SEI(Cpu *cpu, int addr_mode) {
 void CMP(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("CMP ");
+    debug_print(cpu);
     #endif
-    unsigned short addr = fetchAddr(cpu, addr_mode);
 
-    if (cpu->a < cpu->mem[addr]) {
-        Cpu_clearFlag(cpu, Z);
+    unsigned char operand = fetchOperand(cpu, addr_mode);
+    unsigned short result = (unsigned short) cpu->a - (unsigned short) operand;
+
+    //setting C flag
+    if (cpu->a >= operand)
+        Cpu_setFlag(cpu, C);
+    else
         Cpu_clearFlag(cpu, C);
+
+    //setting N flag
+    if ((result & 0x0080) == 0x0080)
         Cpu_setFlag(cpu, N);
-    }
-    else if (cpu->a == cpu->mem[addr]) {
+    else
+        Cpu_clearFlag(cpu, N);
+
+    //setting Z flag
+    if ((result & 0x00FF) == 0)
         Cpu_setFlag(cpu, Z);
-        Cpu_setFlag(cpu, C);
-        Cpu_clearFlag(cpu, N);
-    }
-    else { //reg > op
+    else 
         Cpu_clearFlag(cpu, Z);
-        Cpu_setFlag(cpu, C);
-        Cpu_clearFlag(cpu, N);
-    }
 }
 
 void CPX(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("CPX ");
+    debug_print(cpu);
     #endif
-    unsigned short addr = fetchAddr(cpu, addr_mode);
 
-    if (cpu->x < cpu->mem[addr]) {
-        Cpu_clearFlag(cpu, Z);
+    unsigned char operand = fetchOperand(cpu, addr_mode);
+    unsigned short result = (unsigned short) cpu->x - (unsigned short) operand;
+
+    //setting C flag
+    if (cpu->x >= operand)
+        Cpu_setFlag(cpu, C);
+    else
         Cpu_clearFlag(cpu, C);
+
+    //setting N flag
+    if ((result & 0x0080) == 0x0080)
         Cpu_setFlag(cpu, N);
-    }
-    else if (cpu->x == cpu->mem[addr]) {
+    else
+        Cpu_clearFlag(cpu, N);
+
+    //setting Z flag
+    if ((result & 0x00FF) == 0)
         Cpu_setFlag(cpu, Z);
-        Cpu_setFlag(cpu, C);
-        Cpu_clearFlag(cpu, N);
-    }
-    else { //reg > op
+    else 
         Cpu_clearFlag(cpu, Z);
-        Cpu_setFlag(cpu, C);
-        Cpu_clearFlag(cpu, N);
-    }
 }
 
 void CPY(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("CPY ");
+    debug_print(cpu);
     #endif
-    unsigned short addr = fetchAddr(cpu, addr_mode);
 
-    if (cpu->y < cpu->mem[addr]) {
-        Cpu_clearFlag(cpu, Z);
+    unsigned char operand = fetchOperand(cpu, addr_mode);
+    unsigned short result = (unsigned short) cpu->y - (unsigned short) operand;
+
+    //setting C flag
+    if (cpu->y >= operand)
+        Cpu_setFlag(cpu, C);
+    else
         Cpu_clearFlag(cpu, C);
+
+    //setting N flag
+    if ((result & 0x0080) == 0x0080)
         Cpu_setFlag(cpu, N);
-    }
-    else if (cpu->y == cpu->mem[addr]) {
+    else
+        Cpu_clearFlag(cpu, N);
+
+    //setting Z flag
+    if ((result & 0x00FF) == 0)
         Cpu_setFlag(cpu, Z);
-        Cpu_setFlag(cpu, C);
-        Cpu_clearFlag(cpu, N);
-    }
-    else { //reg > op
+    else 
         Cpu_clearFlag(cpu, Z);
-        Cpu_setFlag(cpu, C);
-        Cpu_clearFlag(cpu, N);
-    }
 }
 
 //conditional branch instructions
 void BCC(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("BCC ");
+    debug_print(cpu);
     #endif
 
     unsigned short branch_addr = fetchAddr(cpu, addr_mode);
@@ -1125,6 +1192,7 @@ void BCC(Cpu *cpu, int addr_mode) {
 void BCS(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("BCS ");
+    debug_print(cpu);
     #endif
 
     unsigned short branch_addr = fetchAddr(cpu, addr_mode);
@@ -1136,6 +1204,7 @@ void BCS(Cpu *cpu, int addr_mode) {
 void BEQ(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("BEQ ");
+    debug_print(cpu);
     #endif
 
     unsigned short branch_addr = fetchAddr(cpu, addr_mode);
@@ -1147,6 +1216,7 @@ void BEQ(Cpu *cpu, int addr_mode) {
 void BNE(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("BNE ");
+    debug_print(cpu);
     #endif
 
     unsigned short branch_addr = fetchAddr(cpu, addr_mode);
@@ -1158,6 +1228,7 @@ void BNE(Cpu *cpu, int addr_mode) {
 void BMI(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("BMI ");
+    debug_print(cpu);
     #endif
 
     unsigned short branch_addr = fetchAddr(cpu, addr_mode);
@@ -1169,17 +1240,20 @@ void BMI(Cpu *cpu, int addr_mode) {
 void BPL(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("BPL ");
+    debug_print(cpu);
     #endif
 
     unsigned short branch_addr = fetchAddr(cpu, addr_mode);
     if ((cpu->p & 0x80) == 0x00) {
         cpu->pc = branch_addr;
     }
+    
 }
 
 void BVC(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("BVC ");
+    debug_print(cpu);
     #endif
 
     unsigned short branch_addr = fetchAddr(cpu, addr_mode);
@@ -1191,6 +1265,7 @@ void BVC(Cpu *cpu, int addr_mode) {
 void BVS(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("BVS ");
+    debug_print(cpu);
     #endif
 
     unsigned short branch_addr = fetchAddr(cpu, addr_mode);
@@ -1203,6 +1278,7 @@ void BVS(Cpu *cpu, int addr_mode) {
 void JMP(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("JMP ");
+    debug_print(cpu);
     #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
     cpu->pc = addr;
@@ -1214,14 +1290,16 @@ void JMP(Cpu *cpu, int addr_mode) {
 void JSR(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("JSR ");
+    debug_print(cpu);
     #endif
+    
     unsigned short jmp_addr = fetchAddr(cpu, addr_mode);
 
-    unsigned short curr_addr = cpu->pc;
+    unsigned short curr_addr = cpu->pc - 1;
     unsigned char curr_addr_l = curr_addr & 0x00FF;
     curr_addr = curr_addr >> 8;
     unsigned char curr_addr_h = curr_addr & 0x00FF;
-    
+
     pushStack(cpu, curr_addr_h);
     pushStack(cpu, curr_addr_l);
 
@@ -1234,6 +1312,7 @@ void JSR(Cpu *cpu, int addr_mode) {
 void RTS(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("RTS ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
     unsigned char ret_addr_l = popStack(cpu);
@@ -1243,7 +1322,7 @@ void RTS(Cpu *cpu, int addr_mode) {
     ret_addr = ret_addr << 8;
     ret_addr |= ret_addr_l;
     
-    cpu->pc = ret_addr;
+    cpu->pc = ret_addr + 1;
 
     //timing adjustments
     cpu->cycleCounter += 4;
@@ -1253,6 +1332,7 @@ void RTS(Cpu *cpu, int addr_mode) {
 void BRK(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("BRK ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
     unsigned short ret_addr = cpu->pc + 2;
@@ -1285,9 +1365,12 @@ void BRK(Cpu *cpu, int addr_mode) {
 void RTI(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("RTI ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
     cpu->p = popStack(cpu);
+    Cpu_clearFlag(cpu, B);
+    Cpu_setFlag(cpu, Ignored);
     unsigned char ret_addr_l = popStack(cpu);
     unsigned char ret_addr_h = popStack(cpu);
 
@@ -1306,23 +1389,34 @@ void RTI(Cpu *cpu, int addr_mode) {
 void BIT(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("BIT ");
+    debug_print(cpu);
     #endif
     unsigned char operand = fetchOperand(cpu, addr_mode);
-    unsigned char operand_n_v = operand & 0xC0;
-
-    cpu->p |= operand_n_v;
-
 
     //setting Z flag
-    if ((operand & cpu->a) != 0)
+    if ((operand & cpu->a) == 0)
         Cpu_setFlag(cpu, Z);
     else
         Cpu_clearFlag(cpu, Z);
+
+    //setting N flag
+    if ((operand & 0x80) == 0x80)
+        Cpu_setFlag(cpu, N);
+    else
+        Cpu_clearFlag(cpu, N);
+    
+    //setting V flag
+    if ((operand & 0x40) == 0x40)
+        Cpu_setFlag(cpu, V);
+    else
+        Cpu_clearFlag(cpu, V);
+    
 }
 
 void NOP(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
     printf("NOP ");
+    debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
 }

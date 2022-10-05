@@ -8,11 +8,11 @@ void Cpu_powerUp(Cpu *cpu) {
     cpu->s = 0xFD;
     cpu->pc = 0;
     cpu->p = 0x24;
+    cpu->totalCyclesCounter = 7;
 
     int i;
     for (i = 0; i < 0xFFFF; i++)
         cpu->mem[i] = 0;
-
 }
 
 void Cpu_reset(Cpu *cpu) {
@@ -517,7 +517,7 @@ void Cpu_decode(Cpu *cpu) {
             INC(cpu, zpgx);
             break;
         case 0xf8:
-            INC(cpu, zpgx);
+            SED(cpu, impl);
             break;
         case 0xf9:
             SBC(cpu, absy);
@@ -535,6 +535,7 @@ void Cpu_decode(Cpu *cpu) {
 }
 
 void Cpu_tick(Cpu *cpu){
+    cpu->totalCyclesCounter += (unsigned short) cpu->cycleCounter;
     float cycle_time = 1 / ((float) CLOCK_FREQ); //in seconds
     usleep(cpu->cycleCounter * cycle_time * 1000000);
 }
@@ -542,9 +543,6 @@ void Cpu_tick(Cpu *cpu){
 void Cpu_mainLoop(Cpu *cpu) {
     while (1) {
         Cpu_decode(cpu);
-        #ifdef DEBUG
-        printf("A:%02X X:%02X Y%02X P%02X SP:%02X CYC:%u\n", cpu->a, cpu->x, cpu->y, cpu->p, cpu->s, cpu->cycleCounter);
-        #endif
         Cpu_tick(cpu);
     }
 }
