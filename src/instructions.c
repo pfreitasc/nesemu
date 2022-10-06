@@ -14,9 +14,15 @@ unsigned char mode_acc(Cpu *cpu) {
 
 unsigned short mode_abs(Cpu *cpu) {
     unsigned char ll = cpu->mem[cpu->pc];
+    #ifdef DEBUG
+    printf("%02X ", ll);
+    #endif
     cpu->pc += 1;
     unsigned char hh = cpu->mem[cpu->pc];
     cpu->pc += 1;
+    #ifdef DEBUG
+    printf("%02X ", hh);
+    #endif
 
     unsigned short addr = 0 | hh;
     addr = addr << 8;
@@ -30,8 +36,14 @@ unsigned short mode_abs(Cpu *cpu) {
 unsigned short mode_absx(Cpu *cpu) {
     unsigned char ll = cpu->mem[(cpu->pc) + (cpu->x)];
     cpu->pc += 1;
+    #ifdef DEBUG
+    printf("%02X ", ll);
+    #endif
     unsigned char hh = cpu->mem[(cpu->pc) + (cpu->x)];
     cpu->pc += 1;
+    #ifdef DEBUG
+    printf("%02X ", ll);
+    #endif
 
     unsigned short addr = 0 | hh;
     addr = addr << 8;
@@ -134,8 +146,8 @@ unsigned short mode_indy(Cpu *cpu) {
     unsigned char zpg_pointer = cpu->mem[cpu->pc];
     cpu->pc +=1;
 
-    unsigned char addr_ll = cpu->mem[zpg_pointer + cpu->y];
-    unsigned char addr_hh = cpu->mem[zpg_pointer + cpu->y + 1];
+    unsigned char addr_ll = cpu->mem[zpg_pointer];
+    unsigned char addr_hh = cpu->mem[zpg_pointer + 1];
     
     unsigned short addr = 0 | addr_hh;
     addr = addr << 8;
@@ -348,8 +360,6 @@ void STA(Cpu *cpu, int addr_mode) {
         cpu->cycleCounter = 5;
     else if (addr_mode == indy)
         cpu->cycleCounter = 6;
-    
-    
 }
 
 void STX(Cpu *cpu, int addr_mode) {

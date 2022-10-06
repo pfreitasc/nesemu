@@ -64,7 +64,7 @@ void Cpu_decode(Cpu *cpu) {
             BRK(cpu, impl);
             break;
         case 0x01:
-            ORA(cpu, rel);
+            ORA(cpu, indx);
             break;
         case 0x05:
             ORA(cpu, zpg);
@@ -104,7 +104,7 @@ void Cpu_decode(Cpu *cpu) {
             CLC(cpu, impl);
             break;
         case 0x19:
-            ORA(cpu, imm);
+            ORA(cpu, absy);
             break;
         case 0x1d:
             ORA(cpu, absx);
@@ -176,7 +176,7 @@ void Cpu_decode(Cpu *cpu) {
             RTI(cpu, impl);
             break;
         case 0x41:
-            EOR(cpu, ind);
+            EOR(cpu, indx);
             break;
         case 0x45:
             EOR(cpu, zpg);
@@ -273,6 +273,9 @@ void Cpu_decode(Cpu *cpu) {
             break;
         case 0x78:
             SEI(cpu, impl);
+            break;
+        case 0x79:
+            ADC(cpu, absy);
             break;
         case 0x7d:
             ADC(cpu, absx);
@@ -380,9 +383,6 @@ void Cpu_decode(Cpu *cpu) {
         case 0xb1:
             LDA(cpu, indy);
             break;
-        case 0xb2:
-            LDX(cpu, imm);
-            break;
         case 0xb4:
             LDY(cpu, zpgx);
             break;
@@ -408,7 +408,7 @@ void Cpu_decode(Cpu *cpu) {
             LDA(cpu, absx);
             break;
         case 0xbe:
-            DEC(cpu, abs);
+            LDX(cpu, absy);
             break;
         //row c
         case 0xc0:
