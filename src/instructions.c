@@ -113,9 +113,10 @@ unsigned short mode_indx(Cpu *cpu) {
     unsigned char zpg_pointer = cpu->mem[cpu->pc] + cpu->x;
     cpu->pc +=1;
 
-    unsigned char addr_ll = cpu->mem[zpg_pointer] & 0xFF;
-    unsigned char addr_hh = cpu->mem[zpg_pointer + 1] & 0xFF;
-
+    unsigned char addr_ll = cpu->mem[zpg_pointer];
+    unsigned char addr_hh = cpu->mem[zpg_pointer + 1];
+    if (zpg_pointer == 0xFF)
+        addr_hh = cpu->mem[0];
     unsigned short addr = 0 | addr_hh;
     addr = addr << 8;
     addr |= addr_ll;
@@ -123,7 +124,7 @@ unsigned short mode_indx(Cpu *cpu) {
     cpu->cycleCounter += 6;
 
     #ifdef DEBUG
-    printf("($%02X,X) @ %02X = %02X%02X ", cpu->mem[cpu->pc], zpg_pointer, addr_hh, addr_ll);
+    //printf("($%02X,X) @ %02X = %02X%02X ", cpu->mem[(cpu->pc) - 1], zpg_pointer, addr_hh, addr_ll);
     #endif
 
     return addr;
@@ -133,8 +134,8 @@ unsigned short mode_indy(Cpu *cpu) {
     unsigned char zpg_pointer = cpu->mem[cpu->pc];
     cpu->pc +=1;
 
-    unsigned char addr_ll = cpu->mem[zpg_pointer] & 0xFF;
-    unsigned char addr_hh = cpu->mem[zpg_pointer + 1] & 0xFF;
+    unsigned char addr_ll = cpu->mem[zpg_pointer + cpu->y];
+    unsigned char addr_hh = cpu->mem[zpg_pointer + cpu->y + 1];
     
     unsigned short addr = 0 | addr_hh;
     addr = addr << 8;
@@ -275,12 +276,12 @@ unsigned char popStack(Cpu *cpu){
 //instructions
 //transfer instructions
 void LDA(Cpu *cpu, int addr_mode) {
-    cpu->a = fetchOperand(cpu, addr_mode);
-    
     #ifdef DEBUG
     printf("LDA ");
     debug_print(cpu);
     #endif
+    
+    cpu->a = fetchOperand(cpu, addr_mode);
     
     //setting Z and N flags
     if ((cpu->a & 0x80) == 0x80)
@@ -298,6 +299,7 @@ void LDX(Cpu *cpu, int addr_mode) {
     printf("LDX ");
     debug_print(cpu);
     #endif
+
     cpu->x = fetchOperand(cpu, addr_mode);
     
     //setting Z and N flags
@@ -316,6 +318,7 @@ void LDY(Cpu *cpu, int addr_mode) {
     printf("LDY ");
     debug_print(cpu);
     #endif
+
     cpu->y = fetchOperand(cpu, addr_mode);
     
     //setting Z and N flags
@@ -334,6 +337,7 @@ void STA(Cpu *cpu, int addr_mode) {
     printf("STA ");
     debug_print(cpu);
     #endif
+
     unsigned short addr = fetchAddr(cpu, addr_mode);
     cpu->mem[addr] = cpu->a;
 
@@ -353,7 +357,9 @@ void STX(Cpu *cpu, int addr_mode) {
     printf("STX ");
     debug_print(cpu);
     #endif
+
     unsigned short addr = fetchAddr(cpu, addr_mode);
+
     cpu->mem[addr] = cpu->x;
 }
 
@@ -362,7 +368,9 @@ void STY(Cpu *cpu, int addr_mode) {
     printf("STY ");
     debug_print(cpu);
     #endif
+
     unsigned short addr = fetchAddr(cpu, addr_mode);
+
     cpu->mem[addr] = cpu->y;
 }
 
@@ -371,7 +379,9 @@ void TAX(Cpu *cpu, int addr_mode) {
     printf("TAX ");
     debug_print(cpu);
     #endif
+
     fetchOperand(cpu, addr_mode);
+
     cpu->x = cpu->a;
 
     //setting Z and N flags
@@ -391,7 +401,9 @@ void TAY(Cpu *cpu, int addr_mode) {
     printf("TAY ");
     debug_print(cpu);
     #endif
+
     fetchOperand(cpu, addr_mode);
+
     cpu->y = cpu->a;
     
     //setting Z and N flags
@@ -411,7 +423,9 @@ void TSX(Cpu *cpu, int addr_mode) {
     printf("TSX ");
     debug_print(cpu);
     #endif
+
     fetchOperand(cpu, addr_mode);
+
     cpu->x = cpu->s;
 
     //setting Z and N flags
@@ -431,7 +445,9 @@ void TXA(Cpu *cpu, int addr_mode) {
     printf("TXA ");
     debug_print(cpu);
     #endif
+
     fetchOperand(cpu, addr_mode);
+
     cpu->a = cpu->x;
 
     //setting Z and N flags
@@ -623,7 +639,9 @@ void INX(Cpu *cpu, int addr_mode) {
     printf("INX ");
     debug_print(cpu);
     #endif
+
     fetchOperand(cpu, addr_mode);
+
     cpu->x += 1;
     
     //setting Z and N flags
