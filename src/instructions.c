@@ -37,14 +37,15 @@ unsigned short mode_absx(Cpu *cpu) {
     addr = addr << 8;
     addr |= ll;
 
-    addr += cpu->x;
+
+    unsigned short final_addr = addr + cpu->x;
 
     cpu->cycleCounter += 4;
 
-    if ((addr >> 8) != (cpu->pc >> 8))
+    if ((addr >> 8) != (final_addr >> 8))
         cpu->cycleCounter += 1;
 
-    return addr;
+    return final_addr;
 }
 
 unsigned short mode_absy(Cpu *cpu) {
@@ -57,15 +58,14 @@ unsigned short mode_absy(Cpu *cpu) {
     addr = addr << 8;
     addr |= ll;
 
-    addr += cpu->y;
+    unsigned short final_addr = addr + cpu->y;
 
     cpu->cycleCounter += 4;
 
-
-    if ((addr >> 8) != (cpu->pc >> 8))
+    if ((addr >> 8) != (final_addr >> 8))
         cpu->cycleCounter += 1;
 
-    return addr;
+    return final_addr;
 }
 
 unsigned char mode_imm(Cpu *cpu) {
@@ -108,7 +108,8 @@ unsigned short mode_ind(Cpu *cpu) {
         addr |= cpu->mem[pointer];
     }
 
-    cpu->cycleCounter += 5;
+    //gets decreased
+    cpu->cycleCounter += 6;
 
     return addr;
 }
@@ -127,10 +128,6 @@ unsigned short mode_indx(Cpu *cpu) {
 
     cpu->cycleCounter += 6;
 
-    #ifdef DEBUG
-    //printf("($%02X,X) @ %02X = %02X%02X ", cpu->mem[(cpu->pc) - 1], zpg_pointer, addr_hh, addr_ll);
-    #endif
-
     return addr;
 }
 
@@ -146,14 +143,14 @@ unsigned short mode_indy(Cpu *cpu) {
     unsigned short addr = 0 | addr_hh;
     addr = addr << 8;
     addr |= addr_ll;
-    addr += cpu->y;
+    unsigned short final_addr = addr + cpu->y;
 
     cpu->cycleCounter += 5;
 
-    if ((addr >> 8) != (cpu->pc >> 8))
+    if ((addr >> 8) != (final_addr >> 8))
         cpu->cycleCounter += 1;
 
-    return addr;
+    return final_addr;
 }
 
 unsigned short mode_rel(Cpu *cpu) {
@@ -187,25 +184,25 @@ unsigned short mode_zpg(Cpu *cpu) {
 }
 
 unsigned short mode_zpgx(Cpu *cpu) {
-    unsigned char ll = cpu->mem[(cpu->pc) + (cpu->x)];
+    unsigned char zpg_pointer = cpu->mem[cpu->pc];
     cpu->pc += 1;
 
-    unsigned short addr = 0 | ll;
+    zpg_pointer += cpu->x;
 
     cpu->cycleCounter += 4;
 
-    return addr;
+    return zpg_pointer;
 }
 
 unsigned short mode_zpgy(Cpu *cpu) {
-    unsigned char ll = cpu->mem[(cpu->pc) + (cpu->y)];
+    unsigned char zpg_pointer = cpu->mem[cpu->pc];
     cpu->pc += 1;
 
-    unsigned short addr = 0 | ll;
+    zpg_pointer += cpu->y;
 
     cpu->cycleCounter += 4;
 
-    return addr;
+    return zpg_pointer;
 }
 
 //auxiliary functions
@@ -627,7 +624,10 @@ void INC(Cpu *cpu, int addr_mode) {
     debug_print(cpu);
     #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
-    cpu->mem[addr] += 1;
+    if (cpu->mem[addr] == 0xFF)
+        cpu->mem[addr] = 0;
+    else
+        cpu->mem[addr] += 0x01;
     
     //setting Z and N flags
     if ((cpu->mem[addr] & 0x80) == 0x80)
@@ -911,7 +911,7 @@ void LSR(Cpu *cpu, int addr_mode) {
         unsigned short addr = fetchAddr(cpu, addr_mode);
         shifted_bit = cpu->mem[addr] & 0x01;
 
-        cpu->mem[addr] = cpu->mem[addr] << 1;
+        cpu->mem[addr] = cpu->mem[addr] >> 1;
 
         //setting C flag
         if (shifted_bit == 0x01)
