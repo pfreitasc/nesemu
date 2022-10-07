@@ -14,15 +14,9 @@ unsigned char mode_acc(Cpu *cpu) {
 
 unsigned short mode_abs(Cpu *cpu) {
     unsigned char ll = cpu->mem[cpu->pc];
-    #ifdef DEBUG
-    printf("%02X ", ll);
-    #endif
     cpu->pc += 1;
     unsigned char hh = cpu->mem[cpu->pc];
     cpu->pc += 1;
-    #ifdef DEBUG
-    printf("%02X ", hh);
-    #endif
 
     unsigned short addr = 0 | hh;
     addr = addr << 8;
@@ -34,43 +28,41 @@ unsigned short mode_abs(Cpu *cpu) {
 }
 
 unsigned short mode_absx(Cpu *cpu) {
-    unsigned char ll = cpu->mem[(cpu->pc) + (cpu->x)];
+    unsigned char ll = cpu->mem[(cpu->pc)];
     cpu->pc += 1;
-    #ifdef DEBUG
-    printf("%02X ", ll);
-    #endif
-    unsigned char hh = cpu->mem[(cpu->pc) + (cpu->x)];
+    unsigned char hh = cpu->mem[(cpu->pc)];
     cpu->pc += 1;
-    #ifdef DEBUG
-    printf("%02X ", ll);
-    #endif
 
     unsigned short addr = 0 | hh;
     addr = addr << 8;
     addr |= ll;
 
+    addr += cpu->x;
+
     cpu->cycleCounter += 4;
 
-    if ((addr >> 8) != (cpu->pc))
+    if ((addr >> 8) != (cpu->pc >> 8))
         cpu->cycleCounter += 1;
 
     return addr;
 }
 
 unsigned short mode_absy(Cpu *cpu) {
-    unsigned char ll = cpu->mem[(cpu->pc) + (cpu->y)];
+    unsigned char ll = cpu->mem[(cpu->pc)];
     cpu->pc += 1;
-    unsigned char hh = cpu->mem[(cpu->pc) + (cpu->y)];
+    unsigned char hh = cpu->mem[(cpu->pc)];
     cpu->pc += 1;
 
     unsigned short addr = 0 | hh;
     addr = addr << 8;
     addr |= ll;
 
+    addr += cpu->y;
+
     cpu->cycleCounter += 4;
 
 
-    if ((addr >> 8) != (cpu->pc))
+    if ((addr >> 8) != (cpu->pc >> 8))
         cpu->cycleCounter += 1;
 
     return addr;
@@ -106,14 +98,14 @@ unsigned short mode_ind(Cpu *cpu) {
     //it takes from last of page and first of same page
     //ex: instead of reading from $C0FF/$C100 it reads from $C0FF/$C000
     if ((pointer & 0xFF) == 0xFF) {
-        addr |= cpu->mem[pointer];
-        addr = addr << 8;
         addr |= cpu->mem[(pointer & 0xFF00)];
+        addr = addr << 8;
+        addr |= cpu->mem[pointer];
     }
     else {
-        addr |= cpu->mem[pointer];
-        addr = addr << 8;
         addr |= cpu->mem[pointer + 1];
+        addr = addr << 8;
+        addr |= cpu->mem[pointer];
     }
 
     cpu->cycleCounter += 5;
@@ -148,7 +140,9 @@ unsigned short mode_indy(Cpu *cpu) {
 
     unsigned char addr_ll = cpu->mem[zpg_pointer];
     unsigned char addr_hh = cpu->mem[zpg_pointer + 1];
-    
+    if (zpg_pointer == 0xFF)
+        addr_hh = cpu->mem[0];
+
     unsigned short addr = 0 | addr_hh;
     addr = addr << 8;
     addr |= addr_ll;
@@ -156,7 +150,7 @@ unsigned short mode_indy(Cpu *cpu) {
 
     cpu->cycleCounter += 5;
 
-    if ((addr >> 8) != (cpu->pc))
+    if ((addr >> 8) != (cpu->pc >> 8))
         cpu->cycleCounter += 1;
 
     return addr;
@@ -177,9 +171,6 @@ unsigned short mode_rel(Cpu *cpu) {
     }
 
     cpu->cycleCounter += 2;
-
-    if ((addr && 0xFF00) != (cpu->pc && 0xFF00))
-        cpu->cycleCounter += 1;
 
     return addr;
 }
@@ -395,7 +386,7 @@ void TAX(Cpu *cpu, int addr_mode) {
     cpu->x = cpu->a;
 
     //setting Z and N flags
-    if (cpu->x < 0)
+    if ((cpu->x & 0x80) == 0x80)
         Cpu_setFlag(cpu, N);
     else
         Cpu_clearFlag(cpu, N);
@@ -509,6 +500,9 @@ void PHA(Cpu *cpu, int addr_mode) {
     #endif
     fetchOperand(cpu, addr_mode);
     pushStack(cpu, cpu->a);
+
+    //timing adjustments
+    cpu->cycleCounter += 1;
 }
 
 void PHP(Cpu *cpu, int addr_mode) {
@@ -518,6 +512,9 @@ void PHP(Cpu *cpu, int addr_mode) {
     #endif
     fetchOperand(cpu, addr_mode);
     pushStack(cpu, (cpu->p | 0x10));
+
+    //timing adjustments
+    cpu->cycleCounter += 1;
 }
 
 void PLA(Cpu *cpu, int addr_mode) {
@@ -538,6 +535,9 @@ void PLA(Cpu *cpu, int addr_mode) {
         Cpu_setFlag(cpu, Z);
     else 
         Cpu_clearFlag(cpu, Z);
+
+    //timing adjustments
+    cpu->cycleCounter += 2;
 }
 
 void PLP(Cpu *cpu, int addr_mode) {
@@ -549,6 +549,9 @@ void PLP(Cpu *cpu, int addr_mode) {
     cpu->p = popStack(cpu);
     Cpu_clearFlag(cpu, B);
     Cpu_setFlag(cpu, Ignored);
+
+    //timing adjustments
+    cpu->cycleCounter += 2;
 }
 
 //decrements & increments
@@ -604,7 +607,7 @@ void DEY(Cpu *cpu, int addr_mode) {
     debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
-    cpu->x -= 1;
+    cpu->y -= 1;
     
     //setting Z and N flags
     if ((cpu->y & 0x80) == 0x80)
@@ -943,13 +946,14 @@ void ROL(Cpu *cpu, int addr_mode) {
     if (addr_mode == acc) {
         fetchOperand(cpu, addr_mode);
         shifted_bit = cpu->a & 0x80;
-        shifted_bit = shifted_bit >> 7;
+
+        unsigned char prev_carry = cpu->p & 0x01;
 
         cpu->a = cpu->a << 1;
-        cpu->a |= shifted_bit;
+        cpu->a |= prev_carry;;
 
         //setting C flag
-        if (shifted_bit == 0x01)
+        if (shifted_bit == 0x80)
             Cpu_setFlag(cpu, C);
         else
             Cpu_clearFlag(cpu, C);
@@ -968,13 +972,14 @@ void ROL(Cpu *cpu, int addr_mode) {
         unsigned short addr = fetchAddr(cpu, addr_mode);
 
         shifted_bit = cpu->mem[addr] & 0x80;
-        shifted_bit = shifted_bit >> 7;
+
+        unsigned char prev_carry = cpu->p & 0x01;
 
         cpu->mem[addr] = cpu->mem[addr] << 1;
-        cpu->mem[addr] |= shifted_bit;
+        cpu->mem[addr] |= prev_carry;
 
         //setting C flag
-        if (shifted_bit == 0x01)
+        if (shifted_bit == 0x80)
             Cpu_setFlag(cpu, C);
         else
             Cpu_clearFlag(cpu, C);
@@ -1006,13 +1011,15 @@ void ROR(Cpu *cpu, int addr_mode) {
     if (addr_mode == acc) {
         fetchOperand(cpu, addr_mode);
         shifted_bit = cpu->a & 0x01;
-        shifted_bit = shifted_bit << 7;
+
+        unsigned char prev_carry = cpu->p & 0x01;
+        prev_carry <<= 7;
 
         cpu->a = cpu->a >> 1;
-        cpu->a |= shifted_bit;
+        cpu->a |= prev_carry;
 
         //setting C flag
-        if (shifted_bit == 0x80)
+        if (shifted_bit == 0x01)
             Cpu_setFlag(cpu, C);
         else
             Cpu_clearFlag(cpu, C);
@@ -1031,13 +1038,15 @@ void ROR(Cpu *cpu, int addr_mode) {
         unsigned short addr = fetchAddr(cpu, addr_mode);
 
         shifted_bit = cpu->mem[addr] & 0x01;
-        shifted_bit = shifted_bit << 7;
+
+        unsigned char prev_carry = cpu->p & 0x01;
+        prev_carry <<= 7;
 
         cpu->mem[addr] = cpu->mem[addr] >> 1;
-        cpu->mem[addr] |= shifted_bit;
+        cpu->mem[addr] |= prev_carry;
 
         //setting C flag
-        if (shifted_bit == 0x80)
+        if (shifted_bit == 0x01)
             Cpu_setFlag(cpu, C);
         else
             Cpu_clearFlag(cpu, C);
@@ -1168,7 +1177,7 @@ void CPX(Cpu *cpu, int addr_mode) {
     else
         Cpu_clearFlag(cpu, C);
 
-    //setting N flag
+    //setting N
     if ((result & 0x0080) == 0x0080)
         Cpu_setFlag(cpu, N);
     else
@@ -1218,7 +1227,10 @@ void BCC(Cpu *cpu, int addr_mode) {
 
     unsigned short branch_addr = fetchAddr(cpu, addr_mode);
     if ((cpu->p & 0x01) == 0x00) {
+        if ((branch_addr >> 8) != (cpu->pc >> 8))
+            cpu->cycleCounter += 1;
         cpu->pc = branch_addr;
+        cpu->cycleCounter += 1;
     }
 }
 
@@ -1230,7 +1242,10 @@ void BCS(Cpu *cpu, int addr_mode) {
 
     unsigned short branch_addr = fetchAddr(cpu, addr_mode);
     if ((cpu->p & 0x01) == 0x01) {
+        if ((branch_addr >> 8) != (cpu->pc >> 8))
+            cpu->cycleCounter += 1;
         cpu->pc = branch_addr;
+        cpu->cycleCounter += 1;
     }
 }
 
@@ -1242,7 +1257,10 @@ void BEQ(Cpu *cpu, int addr_mode) {
 
     unsigned short branch_addr = fetchAddr(cpu, addr_mode);
     if ((cpu->p & 0x02) == 0x02) {
+        if ((branch_addr >> 8) != (cpu->pc >> 8))
+            cpu->cycleCounter += 1;
         cpu->pc = branch_addr;
+        cpu->cycleCounter += 1;
     }
 }
 
@@ -1254,7 +1272,10 @@ void BNE(Cpu *cpu, int addr_mode) {
 
     unsigned short branch_addr = fetchAddr(cpu, addr_mode);
     if ((cpu->p & 0x02) == 0x00) {
+        if ((branch_addr >> 8) != (cpu->pc >> 8))
+            cpu->cycleCounter += 1;
         cpu->pc = branch_addr;
+        cpu->cycleCounter += 1;
     }
 }
 
@@ -1266,7 +1287,10 @@ void BMI(Cpu *cpu, int addr_mode) {
 
     unsigned short branch_addr = fetchAddr(cpu, addr_mode);
     if ((cpu->p & 0x80) == 0x80) {
+        if ((branch_addr >> 8) != (cpu->pc >> 8))
+            cpu->cycleCounter += 1;
         cpu->pc = branch_addr;
+        cpu->cycleCounter += 1;
     }
 }
 
@@ -1278,7 +1302,10 @@ void BPL(Cpu *cpu, int addr_mode) {
 
     unsigned short branch_addr = fetchAddr(cpu, addr_mode);
     if ((cpu->p & 0x80) == 0x00) {
+        if ((branch_addr >> 8) != (cpu->pc >> 8))
+            cpu->cycleCounter += 1;
         cpu->pc = branch_addr;
+        cpu->cycleCounter += 1;
     }
     
 }
@@ -1291,7 +1318,10 @@ void BVC(Cpu *cpu, int addr_mode) {
 
     unsigned short branch_addr = fetchAddr(cpu, addr_mode);
     if ((cpu->p & 0x40) == 0x00) {
+        if ((branch_addr >> 8) != (cpu->pc >> 8))
+            cpu->cycleCounter += 1;
         cpu->pc = branch_addr;
+        cpu->cycleCounter += 1;
     }
 }
 
@@ -1303,7 +1333,10 @@ void BVS(Cpu *cpu, int addr_mode) {
 
     unsigned short branch_addr = fetchAddr(cpu, addr_mode);
     if ((cpu->p & 0x40) == 0x40) {
+        if ((branch_addr >> 8) != (cpu->pc >> 8))
+            cpu->cycleCounter += 1;
         cpu->pc = branch_addr;
+        cpu->cycleCounter += 1;
     }
 }
 
