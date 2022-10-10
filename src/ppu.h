@@ -1,6 +1,8 @@
 #ifndef PPU_H
 #define PPU_H
 
+#include "graphics.h"
+
 typedef struct ppu {
     //cpu registers
     unsigned char *ppuctrl; //$2000 in cpu mem
@@ -20,6 +22,8 @@ typedef struct ppu {
     unsigned char mem[0x3FFF];  //0000-1FFF: pattern memory
                                 //2000-2FFF: nametables
                                 //3F00-3F1F: palettes
+    //SDL variables struct
+    
 } Ppu;
 
 //function prototypes
