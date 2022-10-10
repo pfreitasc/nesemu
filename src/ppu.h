@@ -1,8 +1,6 @@
 #ifndef PPU_H
 #define PPU_H
 
-#include "nes.h"
-
 typedef struct ppu {
     //cpu registers
     unsigned char *ppuctrl; //$2000 in cpu mem
@@ -25,6 +23,7 @@ typedef struct ppu {
 } Ppu;
 
 //function prototypes
+void Ppu_powerUp(Ppu *ppu);
 void Ppu_writeAddr(Ppu *ppu);
 
 
