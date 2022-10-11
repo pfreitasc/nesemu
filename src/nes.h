@@ -13,7 +13,7 @@ typedef struct {
 
 //function prototypes
 void Nes_init(Nes *nes);
-void Nes_ppuBusInit(Nes *nes);
+void Nes_ppuInit(Nes *nes);
 void Nes_loadCartridge(Nes *nes, char *filename);
 
 #endif

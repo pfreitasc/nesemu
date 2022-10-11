@@ -82,10 +82,10 @@ void Cpu_decode(Cpu *cpu) {
             ASL(cpu, acc);
             break;
         case 0x0d:
-            ORA(cpu, abs);
+            ORA(cpu, absol);
             break;
         case 0x0e:
-            ASL(cpu, abs);
+            ASL(cpu, absol);
             break;
         //row 1
         case 0x10:
@@ -114,7 +114,7 @@ void Cpu_decode(Cpu *cpu) {
             break;
         //row 2
         case 0x20:
-            JSR(cpu, abs);
+            JSR(cpu, absol);
             break;
         case 0x21:
             AND(cpu, indx);
@@ -138,13 +138,13 @@ void Cpu_decode(Cpu *cpu) {
             ROL(cpu, acc);
             break;
         case 0x2c:
-            BIT(cpu, abs);
+            BIT(cpu, absol);
             break;
         case 0x2d:
-            AND(cpu, abs);
+            AND(cpu, absol);
             break;
         case 0x2e:
-            ROL(cpu, abs);
+            ROL(cpu, absol);
             break;
         //row 3
         case 0x30:
@@ -194,13 +194,13 @@ void Cpu_decode(Cpu *cpu) {
             LSR(cpu, acc);
             break;
         case 0x4c:
-            JMP(cpu, abs);
+            JMP(cpu, absol);
             break;
         case 0x4d:
-            EOR(cpu, abs);
+            EOR(cpu, absol);
             break;
         case 0x4e:
-            LSR(cpu, abs);
+            LSR(cpu, absol);
             break;
         //row 5
         case 0x50:
@@ -253,10 +253,10 @@ void Cpu_decode(Cpu *cpu) {
             JMP(cpu, ind);
             break;
         case 0x6d:
-            ADC(cpu, abs);
+            ADC(cpu, absol);
             break;
         case 0x6e:
-            ROR(cpu, abs);
+            ROR(cpu, absol);
             break;
         //row 7
         case 0x70:
@@ -303,13 +303,13 @@ void Cpu_decode(Cpu *cpu) {
             TXA(cpu, impl);
             break;
         case 0x8c:
-            STY(cpu, abs);
+            STY(cpu, absol);
             break;
         case 0x8d:
-            STA(cpu, abs);
+            STA(cpu, absol);
             break;
         case 0x8e:
-            STX(cpu, abs);
+            STX(cpu, absol);
             break;
         //row 9
         case 0x90:
@@ -368,13 +368,13 @@ void Cpu_decode(Cpu *cpu) {
             TAX(cpu, impl);
             break;
         case 0xac:
-            LDY(cpu, abs);
+            LDY(cpu, absol);
             break;
         case 0xad:
-            LDA(cpu, abs);
+            LDA(cpu, absol);
             break;
         case 0xae:
-            LDX(cpu, abs);
+            LDX(cpu, absol);
             break;
         //row b
         case 0xb0:
@@ -436,13 +436,13 @@ void Cpu_decode(Cpu *cpu) {
             DEX(cpu, impl);
             break;
         case 0xcc:
-            CPY(cpu, abs);
+            CPY(cpu, absol);
             break;
         case 0xcd:
-            CMP(cpu, abs);
+            CMP(cpu, absol);
             break;
         case 0xce:
-            DEC(cpu, abs);
+            DEC(cpu, absol);
             break;
         //row d
         case 0xd0:
@@ -495,13 +495,13 @@ void Cpu_decode(Cpu *cpu) {
             NOP(cpu, impl);
             break;
         case 0xec:
-            CPX(cpu, abs);
+            CPX(cpu, absol);
             break;
         case 0xed:
-            SBC(cpu, abs);
+            SBC(cpu, absol);
             break;
         case 0xee:
-            INC(cpu, abs);
+            INC(cpu, absol);
             break;
         //row f
         case 0xf0:

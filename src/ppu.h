@@ -23,12 +23,13 @@ typedef struct ppu {
                                 //2000-2FFF: nametables
                                 //3F00-3F1F: palettes
     //SDL variables struct
-    
+    Graphics graphics;
 } Ppu;
 
 //function prototypes
-void Ppu_powerUp(Ppu *ppu);
+void Ppu_init(Ppu *ppu);
 void Ppu_writeAddr(Ppu *ppu);
+void Ppu_draw(Ppu *ppu);
 
 
 

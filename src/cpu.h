@@ -14,7 +14,7 @@
 
 enum addressMode {
     acc,
-    abs,
+    absol,
     absx,
     absy,
     imm,
@@ -41,13 +41,13 @@ enum flag {
 
 
 //cpu struct definition
-typedef struct {
+typedef struct cpu {
     unsigned char a; //accumulator
     unsigned char x, y; //indexes
     unsigned short pc; //progmem counter
     unsigned short s; //stack pointer
     unsigned char p; //status register
-    unsigned short mem[0xFFFF]; //cpu memory
+    unsigned char mem[0xFFFF]; //cpu memory
     unsigned char cycleCounter; //number of cycles needed to execute current instruction
     unsigned short totalCyclesCounter; //number elapsed cycles
 } Cpu;

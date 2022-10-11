@@ -209,7 +209,7 @@ unsigned short mode_zpgy(Cpu *cpu) {
 unsigned short fetchAddr(Cpu *cpu, int addr_mode) {
     unsigned short addr;
     switch (addr_mode) {
-        case abs:
+        case absol:
             addr = mode_abs(cpu);
             break;
         case absx:
