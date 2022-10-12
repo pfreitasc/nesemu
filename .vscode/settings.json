@@ -4,7 +4,15 @@
             "cwd": "/home/pedro/Projetos/nesemu/bin",
             "binaryPath": "/home/pedro/Projetos/nesemu/bin/nestest",
             "binaryArgs": [],
-            "C_Cpp.default.includePath": ["/usr/include/SDL2", "${default}"]
+            "C_Cpp.default.includePath": [
+                "/usr/include/SDL2",
+                "${default}"
+            ]
+        },
+        {
+            "cwd": "/home/pedro/Projects/TCC/nes/bin",
+            "binaryPath": "/home/pedro/Projects/TCC/nes/bin/nestest",
+            "binaryArgs": []
         }
     ],
     "files.associations": {

@@ -17,7 +17,7 @@ void Graphics_init(Graphics *graphics) {
         return;
     }
     //initializing SDL global variables
-    graphics->window = SDL_CreateWindow("CHIP-8", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH*SCREEN_SCALE_FACTOR, SCREEN_HEIGHT*SCREEN_SCALE_FACTOR, SDL_WINDOW_SHOWN);
+    graphics->window = SDL_CreateWindow("NES", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH*SCREEN_SCALE_FACTOR, SCREEN_HEIGHT*SCREEN_SCALE_FACTOR, SDL_WINDOW_SHOWN);
     if(graphics->window == NULL) {
         printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
         return;
@@ -40,7 +40,7 @@ void Graphics_init(Graphics *graphics) {
 }
 
 //updates screen with content of viewport vector
-void Graphics_drawDisplay(Graphics *graphics) {
+void Graphics_draw(Graphics *graphics) {
     SDL_UpdateTexture(graphics->texture, NULL, graphics->viewport, SCREEN_WIDTH * sizeof(unsigned char));
     SDL_RenderClear(graphics->renderer);
     SDL_RenderCopy(graphics->renderer, graphics->texture, NULL, NULL);

@@ -13,11 +13,13 @@ typedef struct ppu {
     unsigned char *ppuscroll; //$2005 in cpu mem
     unsigned char *ppuaddr; //$2006 in cpu mem
     unsigned char *ppudata; //$2007 in cpu mem
+    unsigned char *oamdma; //$4014 in cpu mem
     //internal registers
     unsigned short addr_write;
     unsigned short addr_buffer;
     unsigned char x;
     unsigned char write_toggle;
+    unsigned char stale_data;
     //memory
     unsigned char mem[0x3FFF];  //0000-1FFF: pattern memory
                                 //2000-2FFF: nametables
@@ -30,7 +32,6 @@ typedef struct ppu {
 void Ppu_init(Ppu *ppu);
 void Ppu_writeAddr(Ppu *ppu);
 void Ppu_draw(Ppu *ppu);
-
-
+void Ppu_loadPatterns(Ppu *ppu, unsigned char *chr_data);
 
 #endif

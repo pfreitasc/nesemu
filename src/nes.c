@@ -4,6 +4,7 @@
 void Nes_loadCartridge(Nes *nes, char *filename) {
     Cartridge_getData(&(nes->cartridge), filename);
     Cpu_loadRom(&(nes->cpu), nes->cartridge.prg_data);
+    Ppu_loadPatterns(&(nes->ppu), nes->cartridge.chr_data);
 }
 
 void Nes_ppuInit(Nes *nes) {
@@ -15,12 +16,13 @@ void Nes_ppuInit(Nes *nes) {
     (nes->ppu.ppuscroll) = &(nes->cpu.mem[2005]);
     (nes->ppu.ppuaddr) = &(nes->cpu.mem[2006]);
     (nes->ppu.ppudata) = &(nes->cpu.mem[2007]);
+    (nes->ppu.oamdma) = &(nes->cpu.mem[4014]);
 
     Ppu_init(&(nes->ppu));
 }
 
 void Nes_init(Nes *nes) {
     Cpu_powerUp(&(nes->cpu));
-    Nes_loadCartridge(nes, "../roms/nestest.nes");
+    Nes_loadCartridge(nes, "../roms/DK.nes");
     Nes_ppuInit(nes);
 }

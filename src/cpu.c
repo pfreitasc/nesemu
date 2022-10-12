@@ -29,7 +29,7 @@ void Cpu_loadRom(Cpu *cpu, unsigned char *prg_data){
     for (i = 0; i < 16384 * 2; i++) {
         cpu->mem[0x8000 + i] = prg_data[i];
     }
-    cpu->pc = 0xC000;
+    cpu->pc = 0x8000;
 }
 
 void Cpu_setFlag(Cpu *cpu, int flag) {
