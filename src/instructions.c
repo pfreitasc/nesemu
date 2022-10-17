@@ -1,8 +1,8 @@
 #include "instructions.h"
-
+#include "cpu.h"
 
 void debug_print(Cpu *cpu){
-    printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%u\n", cpu->a, cpu->x, cpu->y, cpu->p, cpu->s, cpu->totalCyclesCounter);
+    printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X", cpu->a, cpu->x, cpu->y, cpu->p, cpu->s);
 }
 //more info on https://www.masswerk.at/6502/6502_instruction_set.html
 

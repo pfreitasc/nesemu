@@ -5,33 +5,55 @@ void Graphics_init(Graphics *graphics) {
 
     //clearing viewport
     for (i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; i++)
-        graphics->viewport[i] = 0;
+        graphics->game_viewport[i] = 0;
+    for (i = 0; i < PATTERNS_WIDTH * PATTERNS_HEIGHT; i++)
+        graphics->patterns_viewport[i] = 0;
 
-    graphics->window = NULL;
-    graphics->renderer = NULL;
-    graphics->texture = NULL;
+    graphics->game_window = NULL;
+    graphics->game_renderer = NULL;
+    graphics->game_texture = NULL;
+    graphics->patterns_window = NULL;
+    graphics->patterns_renderer = NULL;
+    graphics->patterns_texture = NULL;
 
     //initializing SDL
     if(SDL_Init(SDL_INIT_VIDEO) < 0) {
         printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
         return;
     }
-    //initializing SDL global variables
-    graphics->window = SDL_CreateWindow("NES", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH*SCREEN_SCALE_FACTOR, SCREEN_HEIGHT*SCREEN_SCALE_FACTOR, SDL_WINDOW_SHOWN);
-    if(graphics->window == NULL) {
+    //initializing SDL game screen variables
+    graphics->game_window = SDL_CreateWindow("NES", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH*SCREEN_SCALE_FACTOR, SCREEN_HEIGHT*SCREEN_SCALE_FACTOR, SDL_WINDOW_SHOWN);
+    if(graphics->game_window == NULL) {
         printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
         return;
     }
-    graphics->renderer = SDL_CreateRenderer(graphics->window, -1, 0);
-    if (graphics->renderer == NULL) {
-        printf("SDL renderer could not be created.\n");
+    graphics->game_renderer = SDL_CreateRenderer(graphics->game_window, -1, 0);
+    if (graphics->game_renderer == NULL) {
+        printf("SDL game_renderer could not be created.\n");
         return;
     }
-    graphics->texture = SDL_CreateTexture(graphics->renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_TARGET, SCREEN_WIDTH, SCREEN_HEIGHT);
-    if (graphics->texture == NULL) {
-        printf("SDL texture could not be created.\n");
+    graphics->game_texture = SDL_CreateTexture(graphics->game_renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_TARGET, SCREEN_WIDTH, SCREEN_HEIGHT);
+    if (graphics->game_texture == NULL) {
+        printf("SDL game_texture could not be created.\n");
         return;
     }
+    //initializing SDL patterns screen variables
+    graphics->patterns_window = SDL_CreateWindow("Patterns", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, PATTERNS_WIDTH*SCREEN_SCALE_FACTOR, PATTERNS_HEIGHT*SCREEN_SCALE_FACTOR, SDL_WINDOW_SHOWN);
+    if(graphics->patterns_window == NULL) {
+        printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
+        return;
+    }
+    graphics->patterns_renderer = SDL_CreateRenderer(graphics->patterns_window, -1, 0);
+    if (graphics->patterns_renderer == NULL) {
+        printf("SDL patterns_renderer could not be created.\n");
+        return;
+    }
+    graphics->patterns_texture = SDL_CreateTexture(graphics->patterns_renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_TARGET, PATTERNS_WIDTH, PATTERNS_HEIGHT);
+    if (graphics->patterns_texture == NULL) {
+        printf("SDL patterns_texture could not be created.\n");
+        return;
+    }
+
 
     //map palette colors to a rgb SDL color
     graphics->palColor[0] = 0x7C7C7C;
@@ -100,15 +122,26 @@ void Graphics_init(Graphics *graphics) {
     graphics->palColor[63] = 0x000000;
 
     //clear SDL screen
-    SDL_SetRenderDrawColor(graphics->renderer, 0, 0, 0, 0);
-    SDL_RenderClear(graphics->renderer);
-    SDL_RenderPresent(graphics->renderer);
+    SDL_SetRenderDrawColor(graphics->game_renderer, 0, 0, 0, 0);
+    SDL_RenderClear(graphics->game_renderer);
+    SDL_RenderPresent(graphics->game_renderer);
+    //clear patterns screen
+    SDL_SetRenderDrawColor(graphics->patterns_renderer, 0, 0, 0, 0);
+    SDL_RenderClear(graphics->patterns_renderer);
+    SDL_RenderPresent(graphics->patterns_renderer);
 }
 
 //updates screen with content of viewport vector
-void Graphics_draw(Graphics *graphics) {
-    SDL_UpdateTexture(graphics->texture, NULL, graphics->viewport, SCREEN_WIDTH * sizeof(unsigned char));
-    SDL_RenderClear(graphics->renderer);
-    SDL_RenderCopy(graphics->renderer, graphics->texture, NULL, NULL);
-    SDL_RenderPresent(graphics->renderer);
+void Graphics_drawGame(Graphics *graphics) {
+    SDL_UpdateTexture(graphics->game_texture, NULL, graphics->game_viewport, SCREEN_WIDTH * sizeof(unsigned char));
+    SDL_RenderClear(graphics->game_renderer);
+    SDL_RenderCopy(graphics->game_renderer, graphics->game_texture, NULL, NULL);
+    SDL_RenderPresent(graphics->game_renderer);
+}
+
+void Graphics_drawPatterns(Graphics *graphics) {
+    SDL_UpdateTexture(graphics->patterns_texture, NULL, graphics->patterns_viewport, PATTERNS_WIDTH * sizeof(unsigned char));
+    SDL_RenderClear(graphics->patterns_renderer);
+    SDL_RenderCopy(graphics->patterns_renderer, graphics->patterns_texture, NULL, NULL);
+    SDL_RenderPresent(graphics->patterns_renderer);
 }

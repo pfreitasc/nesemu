@@ -28,7 +28,14 @@ void Cpu_loadRom(Cpu *cpu, unsigned char *prg_data){
     for (i = 0; i < 16384 * 2; i++) {
         cpu->mem[0x8000 + i] = prg_data[i];
     }
-    cpu->pc = 0x8000;
+
+    //pc points to address in reset vector FFFC-FFFD
+    unsigned short addr_h = cpu->mem[0xFFFC];
+    addr_h <<= 8;
+    unsigned short addr_l = cpu->mem[0xFFFD];
+    unsigned short addr = addr_l | addr_h;
+    cpu->pc = addr;
+
 }
 
 void Cpu_setFlag(Cpu *cpu, int flag) {
@@ -65,14 +72,14 @@ void Cpu_irq(Cpu *cpu) {
     curr_addr = curr_addr >> 8;
     unsigned char curr_addr_h = curr_addr & 0x00FF;
 
-    pushStack(cpu, curr_addr_h);
-    pushStack(cpu, curr_addr_l);
+    Cpu_pushStack(cpu, curr_addr_h);
+    Cpu_pushStack(cpu, curr_addr_l);
 
     //push status to stack
     cpu->p &= (0 >> B);
     cpu->p |= (1 >> Ignored);
     cpu->p |= (1 >> I);
-    pushStack(cpu, cpu->p);
+    Cpu_pushStack(cpu, cpu->p);
 
     unsigned short addr_h = cpu->mem[0xFFFE];
     addr_h <<= 8;
@@ -92,14 +99,14 @@ void Cpu_nmi(Cpu *cpu) {
     curr_addr = curr_addr >> 8;
     unsigned char curr_addr_h = curr_addr & 0x00FF;
 
-    pushStack(cpu, curr_addr_h);
-    pushStack(cpu, curr_addr_l);
+    Cpu_pushStack(cpu, curr_addr_h);
+    Cpu_pushStack(cpu, curr_addr_l);
 
     //push status to stack
     cpu->p &= (0 >> B);
     cpu->p |= (1 >> Ignored);
     cpu->p |= (1 >> I);
-    pushStack(cpu, cpu->p);
+    Cpu_pushStack(cpu, cpu->p);
 
     unsigned short addr_h = cpu->mem[0xFFFA];
     addr_h <<= 8;

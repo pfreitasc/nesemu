@@ -2,7 +2,7 @@
 #include "graphics.h"
 
 void Ppu_draw(Ppu *ppu) {
-    Graphics_draw(&(ppu->graphics));
+    Graphics_drawPatterns(&(ppu->graphics));
 }
 
 void Ppu_loadPatterns(Ppu *ppu, unsigned char *chr_data) {
@@ -31,11 +31,11 @@ void Ppu_drawPatterns(Ppu *ppu) {
                     addr_1 = addr_0 | (1 << 3);
                     //per pixel column
                     for (pixel_column = 0; pixel_column < 8; pixel_column++) {
-                        viewport_addr = (pixel_column) + (pixel_row*SCREEN_WIDTH) + (tile_column*8) + (tile_row*8*SCREEN_WIDTH) + (table*16*8);
+                        viewport_addr = (pixel_column) + (pixel_row*PATTERNS_WIDTH) + (tile_column*8) + (tile_row*8*PATTERNS_WIDTH) + (table*16*8);
                         bit_0 = ((ppu->mem[addr_0] & (0x80 >> pixel_column)) >> (7 - pixel_column));
                         bit_1 = ((ppu->mem[addr_1] & (0x80 >> pixel_column)) >> (7 - pixel_column));
                         bit = bit_0 + bit_1;
-                        ppu->graphics.viewport[viewport_addr] = bit;
+                        ppu->graphics.patterns_viewport[viewport_addr] = bit;
                     }
                 }
             }
@@ -54,9 +54,6 @@ void Ppu_init(Ppu *ppu) {
     *(ppu->ppudata) = 0;
 
     Graphics_init(&(ppu->graphics));
-    int i;
-    for (i = 0; i < SCREEN_HEIGHT*SCREEN_WIDTH; i++)
-        ppu->graphics.viewport[i] = 0;
     //Ppu_draw(ppu);
     Ppu_drawPatterns(ppu);
 }

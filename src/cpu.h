@@ -58,6 +58,9 @@ void Cpu_loadRom(Cpu *cpu, unsigned char *prg_data);
 void Cpu_setFlag(Cpu *cpu, int flag);
 void Cpu_clearFlag(Cpu *cpu, int flag);
 void Cpu_decode(Cpu *cpu);
+void Cpu_nmi(Cpu *cpu);
+unsigned char Cpu_popStack(Cpu *cpu);
+void Cpu_pushStack(Cpu *cpu, unsigned char data);
 unsigned char Cpu_tick(Cpu *cpu);
 
 #endif
