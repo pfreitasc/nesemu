@@ -4,6 +4,6 @@ int main(int argc, char *argv[]) {
   Nes nes;
 
   Nes_init(&nes);
-  Cpu_mainLoop(&(nes.cpu));
+  Nes_mainLoop(&nes);
   return 0;
 }

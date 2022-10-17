@@ -263,16 +263,6 @@ unsigned char fetchOperand(Cpu *cpu, int addr_mode) {
     return operand;
 }
 
-void pushStack(Cpu *cpu, unsigned char val){
-    cpu->mem[STACK_START + cpu->s] = val;
-    cpu->s -= 1;
-}
-
-unsigned char popStack(Cpu *cpu){
-    cpu->s += 1;
-    return cpu->mem[STACK_START + cpu->s];
-}
-
 //instructions
 //transfer instructions
 void LDA(Cpu *cpu, int addr_mode) {
@@ -496,7 +486,7 @@ void PHA(Cpu *cpu, int addr_mode) {
     debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
-    pushStack(cpu, cpu->a);
+    Cpu_pushStack(cpu, cpu->a);
 
     //timing adjustments
     cpu->cycleCounter += 1;
@@ -508,7 +498,7 @@ void PHP(Cpu *cpu, int addr_mode) {
     debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
-    pushStack(cpu, (cpu->p | 0x10));
+    Cpu_pushStack(cpu, (cpu->p | 0x10));
 
     //timing adjustments
     cpu->cycleCounter += 1;
@@ -520,7 +510,7 @@ void PLA(Cpu *cpu, int addr_mode) {
     debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
-    cpu->a = popStack(cpu);
+    cpu->a = Cpu_popStack(cpu);
 
     //setting Z and N flags
     if ((cpu->a & 0x80) == 0x80)
@@ -543,7 +533,7 @@ void PLP(Cpu *cpu, int addr_mode) {
     debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
-    cpu->p = popStack(cpu);
+    cpu->p = Cpu_popStack(cpu);
     Cpu_clearFlag(cpu, B);
     Cpu_setFlag(cpu, Ignored);
 
@@ -1366,8 +1356,8 @@ void JSR(Cpu *cpu, int addr_mode) {
     curr_addr = curr_addr >> 8;
     unsigned char curr_addr_h = curr_addr & 0x00FF;
 
-    pushStack(cpu, curr_addr_h);
-    pushStack(cpu, curr_addr_l);
+    Cpu_pushStack(cpu, curr_addr_h);
+    Cpu_pushStack(cpu, curr_addr_l);
 
     cpu->pc = jmp_addr;
 
@@ -1381,8 +1371,8 @@ void RTS(Cpu *cpu, int addr_mode) {
     debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
-    unsigned char ret_addr_l = popStack(cpu);
-    unsigned char ret_addr_h = popStack(cpu);
+    unsigned char ret_addr_l = Cpu_popStack(cpu);
+    unsigned char ret_addr_h = Cpu_popStack(cpu);
 
     unsigned short ret_addr = ret_addr_h;
     ret_addr = ret_addr << 8;
@@ -1409,9 +1399,9 @@ void BRK(Cpu *cpu, int addr_mode) {
     
     cpu->p |= 1 >> B;
 
-    pushStack(cpu, ret_addr_h);
-    pushStack(cpu, ret_addr_l);
-    pushStack(cpu, cpu->p);
+    Cpu_pushStack(cpu, ret_addr_h);
+    Cpu_pushStack(cpu, ret_addr_l);
+    Cpu_pushStack(cpu, cpu->p);
     
     cpu->p |= 1 >> I;
 
@@ -1434,11 +1424,11 @@ void RTI(Cpu *cpu, int addr_mode) {
     debug_print(cpu);
     #endif
     fetchOperand(cpu, addr_mode);
-    cpu->p = popStack(cpu);
+    cpu->p = Cpu_popStack(cpu);
     Cpu_clearFlag(cpu, B);
     Cpu_setFlag(cpu, Ignored);
-    unsigned char ret_addr_l = popStack(cpu);
-    unsigned char ret_addr_h = popStack(cpu);
+    unsigned char ret_addr_l = Cpu_popStack(cpu);
+    unsigned char ret_addr_h = Cpu_popStack(cpu);
 
     unsigned short ret_addr = ret_addr_h;
     ret_addr = ret_addr << 8;

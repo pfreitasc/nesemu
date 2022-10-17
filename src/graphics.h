@@ -6,9 +6,11 @@
 #define SCREEN_HEIGHT 240
 #define SCREEN_SCALE_FACTOR 2
 
+//palette color lookup
 
 typedef struct graphics {
-    unsigned char viewport[SCREEN_WIDTH*SCREEN_HEIGHT];
+    unsigned int viewport[SCREEN_WIDTH*SCREEN_HEIGHT];
+    unsigned int palColor[0x3F];
     SDL_Window *window;
     SDL_Renderer *renderer;
     SDL_Texture *texture;

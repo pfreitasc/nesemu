@@ -1,7 +1,6 @@
 #include "ppu.h"
 #include "graphics.h"
 
-
 void Ppu_draw(Ppu *ppu) {
     Graphics_draw(&(ppu->graphics));
 }
@@ -62,13 +61,71 @@ void Ppu_init(Ppu *ppu) {
     Ppu_drawPatterns(ppu);
 }
 
+unsigned char Ppu_getIncrement(Ppu *ppu) {
+    //I is 1: increment 32
+    if ((*(ppu->ppuctrl) & 0x04) & 0x04)
+        return 32;
+    //I is 0: increment 1
+    else
+        return 1;
+}
+
 unsigned char Ppu_readStatus(Ppu *ppu) {
-    ppu->write_toggle = 0;
+    ppu->addr_latch = 0;
     *(ppu->ppustatus) &= 0x7F;
-    *(ppu->ppustatus) |= (ppu->stale_data & 0x1F);
+    *(ppu->ppustatus) |= (ppu->read_buffer & 0x1F);
     return *(ppu->ppustatus);
 }
 
 unsigned char Ppu_readData(Ppu *ppu) {
+    unsigned char data;
+    data = ppu->read_buffer;
+    ppu->read_buffer = ppu->mem[*(ppu->ppuaddr)];
+    //if reading palette data, doesn't write to buffer before returning value
+    if (*(ppu->ppuaddr) >= 0x3F00)
+        data = ppu->read_buffer;
     
+    //incrementing addr
+    *(ppu->ppuaddr) += Ppu_getIncrement(ppu);
+    return data;
+}
+
+void Ppu_writeCtrl(Ppu *ppu, unsigned char data) {
+    *(ppu->ppuctrl) = data;
+    //nametable x and y on the loopy reg
+    ppu->nametable_x = (data & 0x01);
+    ppu->nametable_y = (data & 0x02);
+}
+
+void Ppu_writeScroll(Ppu *ppu, unsigned char data) {
+    if (ppu->addr_latch == 0) {
+        ppu->fine_x = data & 0x07;
+        ppu->coarse_x = data >> 3;
+        *(ppu->ppuscroll) = data;
+        ppu->addr_latch = 1;
+    }
+    else {
+        ppu->fine_y = data & 0x07;
+        ppu->coarse_y = data >> 3;
+        *(ppu->ppuscroll) = data;
+        ppu->addr_latch = 0;        
+    }
+}
+
+void Ppu_writeAddr(Ppu *ppu, unsigned char data) {
+    if (ppu->addr_latch == 0) {
+        ppu->addr_buffer = (unsigned short) data;
+        ppu->addr_buffer <<= 8;
+        ppu->addr_latch = 1;
+    }
+    else {
+        ppu->addr_buffer |= (unsigned short) data;
+        *(ppu->ppuaddr) = ppu->addr_buffer;
+        ppu->addr_latch = 0;
+    }
+}
+
+void Ppu_writeData(Ppu *ppu) {
+    ppu->mem[(*(ppu->ppuaddr))] = *(ppu->ppudata);
+    *(ppu->ppuaddr) += Ppu_getIncrement(ppu);
 }

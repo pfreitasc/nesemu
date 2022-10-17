@@ -8,7 +8,6 @@ void Cpu_powerUp(Cpu *cpu) {
     cpu->s = 0xFD;
     cpu->pc = 0;
     cpu->p = 0x24;
-    cpu->totalCyclesCounter = 7;
 
     int i;
     for (i = 0; i < 0xFFFF; i++)
@@ -43,6 +42,73 @@ void Cpu_clearFlag(Cpu *cpu, int flag) {
     mask = mask >> flag;
     mask = ~mask;
     cpu->p &= mask;
+}
+
+void Cpu_pushStack(Cpu *cpu, unsigned char val){
+    cpu->mem[STACK_START + cpu->s] = val;
+    cpu->s -= 1;
+}
+
+unsigned char Cpu_popStack(Cpu *cpu){
+    cpu->s += 1;
+    return cpu->mem[STACK_START + cpu->s];
+}
+
+void Cpu_irq(Cpu *cpu) {
+    if ((cpu->p & 0x04) == 0x04) {
+        return;
+    }
+    //push pc to stack
+
+    unsigned short curr_addr = cpu->pc;
+    unsigned char curr_addr_l = curr_addr & 0x00FF;
+    curr_addr = curr_addr >> 8;
+    unsigned char curr_addr_h = curr_addr & 0x00FF;
+
+    pushStack(cpu, curr_addr_h);
+    pushStack(cpu, curr_addr_l);
+
+    //push status to stack
+    cpu->p &= (0 >> B);
+    cpu->p |= (1 >> Ignored);
+    cpu->p |= (1 >> I);
+    pushStack(cpu, cpu->p);
+
+    unsigned short addr_h = cpu->mem[0xFFFE];
+    addr_h <<= 8;
+    unsigned short addr_l = cpu->mem[0xFFFF];
+    unsigned short addr = addr_l | addr_h;
+    cpu->pc = addr;
+
+    //timing adjustment
+    cpu->cycleCounter = 7;  
+}
+
+void Cpu_nmi(Cpu *cpu) {
+
+    //push pc to stack
+    unsigned short curr_addr = cpu->pc;
+    unsigned char curr_addr_l = curr_addr & 0x00FF;
+    curr_addr = curr_addr >> 8;
+    unsigned char curr_addr_h = curr_addr & 0x00FF;
+
+    pushStack(cpu, curr_addr_h);
+    pushStack(cpu, curr_addr_l);
+
+    //push status to stack
+    cpu->p &= (0 >> B);
+    cpu->p |= (1 >> Ignored);
+    cpu->p |= (1 >> I);
+    pushStack(cpu, cpu->p);
+
+    unsigned short addr_h = cpu->mem[0xFFFA];
+    addr_h <<= 8;
+    unsigned short addr_l = cpu->mem[0xFFFB];
+    unsigned short addr = addr_l | addr_h;
+    cpu->pc = addr;
+
+    //timing adjustment
+    cpu->cycleCounter = 8;  
 }
 
 void Cpu_decode(Cpu *cpu) {
@@ -534,15 +600,8 @@ void Cpu_decode(Cpu *cpu) {
     }
 }
 
-void Cpu_tick(Cpu *cpu){
-    cpu->totalCyclesCounter += (unsigned short) cpu->cycleCounter;
+unsigned char Cpu_tick(Cpu *cpu){
     float cycle_time = 1 / ((float) CLOCK_FREQ); //in seconds
     usleep(cpu->cycleCounter * cycle_time * 1000000);
-}
-
-void Cpu_mainLoop(Cpu *cpu) {
-    while (1) {
-        Cpu_decode(cpu);
-        Cpu_tick(cpu);
-    }
+    return cpu->cycleCounter;
 }

@@ -6,8 +6,6 @@
 //auxiliary functions
 unsigned char fetchOperand(Cpu *cpu, int addr_mode);
 unsigned short fetchAddr(Cpu *cpu, int addr_mode);
-void pushStack(Cpu *cpu, unsigned char val);
-unsigned char popStack(Cpu *cpu);
 
 //address mode fuctions
 unsigned char mode_acc(Cpu *cpu);

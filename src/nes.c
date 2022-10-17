@@ -25,4 +25,18 @@ void Nes_init(Nes *nes) {
     Cpu_powerUp(&(nes->cpu));
     Nes_loadCartridge(nes, "../roms/DK.nes");
     Nes_ppuInit(nes);
+    nes->globalCyclesCounter = 7;
+}
+
+void Nes_mainLoop(Nes *nes) {
+    while (1) {
+        Cpu_decode(&(nes->cpu));
+        if (nes->ppu.nmi) {
+            nes->ppu.nmi = 0;
+            Cpu_nmi(&(nes->cpu));
+        }
+
+
+        nes->globalCyclesCounter += Cpu_tick(&(nes->cpu));
+    }
 }

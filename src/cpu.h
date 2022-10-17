@@ -49,7 +49,6 @@ typedef struct cpu {
     unsigned char p; //status register
     unsigned char mem[0xFFFF]; //cpu memory
     unsigned char cycleCounter; //number of cycles needed to execute current instruction
-    unsigned short totalCyclesCounter; //number elapsed cycles
 } Cpu;
 
 //cpu functions definitions
@@ -59,7 +58,6 @@ void Cpu_loadRom(Cpu *cpu, unsigned char *prg_data);
 void Cpu_setFlag(Cpu *cpu, int flag);
 void Cpu_clearFlag(Cpu *cpu, int flag);
 void Cpu_decode(Cpu *cpu);
-void Cpu_tick(Cpu *cpu);
-void Cpu_mainLoop(Cpu *cpu);
+unsigned char Cpu_tick(Cpu *cpu);
 
 #endif
