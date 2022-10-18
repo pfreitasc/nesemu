@@ -3,6 +3,8 @@
 
 #include "graphics.h"
 
+#define PALETTE_MEM_START 0x3F00
+
 typedef struct ppu {
     //cpu registers
     unsigned char *ppuctrl; //$2000 in cpu mem
@@ -22,7 +24,9 @@ typedef struct ppu {
     unsigned char addr_latch;
     unsigned char mirroring;
     unsigned char nmi;
-    //background registers
+    unsigned char patterns_matrix[PATTERNS_WIDTH * PATTERNS_HEIGHT];
+    unsigned char game_matrix[SCREEN_WIDTH * SCREEN_HEIGHT];
+    //background temporary registers
     unsigned char coarse_x; //tile x, 5 bits
     unsigned char coarse_y; //tile y, 5 bits
     unsigned char nametable_x; //nametable x, 1 bit

@@ -41,5 +41,7 @@ void Nes_mainLoop(Nes *nes) {
         #ifdef DEBUG
         printf(" CYC:%u\n", nes->globalCyclesCounter);
         #endif
+
+        Ppu_draw(&(nes->ppu));
     }
 }

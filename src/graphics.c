@@ -133,14 +133,14 @@ void Graphics_init(Graphics *graphics) {
 
 //updates screen with content of viewport vector
 void Graphics_drawGame(Graphics *graphics) {
-    SDL_UpdateTexture(graphics->game_texture, NULL, graphics->game_viewport, SCREEN_WIDTH * sizeof(unsigned char));
+    SDL_UpdateTexture(graphics->game_texture, NULL, graphics->game_viewport, SCREEN_WIDTH * sizeof(unsigned int));
     SDL_RenderClear(graphics->game_renderer);
     SDL_RenderCopy(graphics->game_renderer, graphics->game_texture, NULL, NULL);
     SDL_RenderPresent(graphics->game_renderer);
 }
 
 void Graphics_drawPatterns(Graphics *graphics) {
-    SDL_UpdateTexture(graphics->patterns_texture, NULL, graphics->patterns_viewport, PATTERNS_WIDTH * sizeof(unsigned char));
+    SDL_UpdateTexture(graphics->patterns_texture, NULL, graphics->patterns_viewport, PATTERNS_WIDTH * sizeof(unsigned int));
     SDL_RenderClear(graphics->patterns_renderer);
     SDL_RenderCopy(graphics->patterns_renderer, graphics->patterns_texture, NULL, NULL);
     SDL_RenderPresent(graphics->patterns_renderer);
