@@ -144,3 +144,59 @@ void Ppu_init(Ppu *ppu) {
     //Ppu_draw(ppu);
     Ppu_drawPatterns(ppu);
 }
+
+Ppu_tick(Ppu *ppu) {
+    //on a visible scanline (or pre-render)
+    if ((ppu->scanline >= -1) && (ppu->scanline < 240)) {
+        if ((ppu->scanline == 0) && (ppu->cycle == 0)) {
+            //cycle 0 is skipped on scanline 0
+            ppu->cycle = 1;
+        }
+        //on the pre-render scanline
+        if ((ppu->scanline == -1) && (ppu->cycle == 1)) {
+            //entering a new frame, clear:
+            //VBlank, Sprite 0, Overflow
+            *(ppu->ppustatus) &= 0x7F;
+        }
+        if (((ppu->cycle >= 2) && (ppu->cycle < 258)) || ((ppu->cycle >= 321) && (ppu->cycle < 338))) {
+            //if BG is enabled in ppumask
+            if ((*(ppu->ppumask) & 0x08) == 0x08) {
+                //shift BG shifters
+                ppu->bg_shifter_pattern[0] <<= 1;
+                ppu->bg_shifter_pattern[1] <<= 1;
+                ppu->bg_shifter_attrib[0] <<= 1;
+                ppu->bg_shifter_attrib[1] <<= 1;
+            }
+            switch ((ppu->cycle - 1) % 8) {
+                case 0: //NT byte (cycle = 9 (0?))
+                    //load the current BG tile pattern into the shifter
+                    //fetch next tile pattern
+                    ppu->bg_next_tile_id = ppu->mem[0x2000 | (*(ppu->ppuaddr) & 0x0FFF)];
+                case 2: //AT byte (cycle = 3)
+                case 4: //Low BG tile byte (cycle = 5)
+                case 6: //High BG tile byte (cycle = 7)
+                case 7: //finished 8 pixels, increment scroll X
+            }
+        }
+    }
+
+    //just exited visible scanline
+    if ((ppu->scanline == 241) && (ppu->cycle == 1)) {
+        //setting VBlank
+        *(ppu->ppustatus) |= 0x80;
+        //emit nmi if ppucontrol nmi is set
+        if ((*(ppu->ppuctrl) & 0x80) == (0x80))
+            ppu->nmi = 0x01;
+    }
+
+    //incrementing scanline and/or cycle
+    ppu->cycle += 1;
+    if (ppu->cycle >= 341) {
+        ppu->cycle = 0;
+        ppu->scanline += 1;
+        if (ppu->scanline >= 261) {
+            ppu->scanline = -1;
+            ppu->frame_complete = 0x01;
+        }
+    }
+}

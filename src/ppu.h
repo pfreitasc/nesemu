@@ -17,13 +17,14 @@ typedef struct ppu {
     unsigned char *ppudata; //$2007 in cpu mem
     unsigned char *oamdma; //$4014 in cpu mem
     //internal registers
-    unsigned short addr_write;
     unsigned short addr_buffer;
     unsigned char read_buffer;
-    unsigned char x;
     unsigned char addr_latch;
     unsigned char mirroring;
     unsigned char nmi;
+    unsigned char frame_complete;
+    short scanline;
+    short cycle;
     unsigned char patterns_matrix[PATTERNS_WIDTH * PATTERNS_HEIGHT];
     unsigned char game_matrix[SCREEN_WIDTH * SCREEN_HEIGHT];
     //background temporary registers
@@ -33,8 +34,12 @@ typedef struct ppu {
     unsigned char nametable_y; // nametable y, 1 bit
     unsigned char fine_x; //pixel x inside tile, 3 bits
     unsigned char fine_y; //pixel y inside tile, 3 bits
-    unsigned short bg_pattern_shift[2];
-    unsigned char bg_palette_shift[2];
+    unsigned char bg_next_tile_id; //coordinates of next tile
+    unsigned char bg_next_tile_attrib; //palette of next tile
+    unsigned char bg_next_tile_lsb; //lsb of pattern to load on the tile
+    unsigned char bg_next_tile_msb; //msb of pattern to load on the tile
+    unsigned short bg_shifter_pattern[2]; 
+    unsigned short bg_shifter_attrib[2];
     //sprite registers
     unsigned char oam1[64];
     unsigned char oam2[8];
