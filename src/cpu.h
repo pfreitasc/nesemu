@@ -4,6 +4,7 @@
 
 #include <unistd.h>
 #include <stdio.h>
+#include "ppu.h"
 
 //cpu constant definitions
 
@@ -49,6 +50,8 @@ typedef struct cpu {
     unsigned char p; //status register
     unsigned char mem[0xFFFF]; //cpu memory
     unsigned char cycleCounter; //number of cycles needed to execute current instruction
+    unsigned int totalCycles; //number of cycles elapsed since beginnig of emulation
+    Ppu ppu;
 } Cpu;
 
 //cpu functions definitions
@@ -61,6 +64,8 @@ void Cpu_decode(Cpu *cpu);
 void Cpu_nmi(Cpu *cpu);
 unsigned char Cpu_popStack(Cpu *cpu);
 void Cpu_pushStack(Cpu *cpu, unsigned char data);
-unsigned char Cpu_tick(Cpu *cpu);
+unsigned char Cpu_time(Cpu *cpu);
+void Cpu_write(Cpu *cpu, unsigned short addr, unsigned char data);
+unsigned char Cpu_read(Cpu *cpu, unsigned short addr);
 
 #endif

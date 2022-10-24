@@ -25,21 +25,27 @@ typedef struct ppu {
     unsigned char frame_complete;
     short scanline;
     short cycle;
-    unsigned char patterns_matrix[PATTERNS_WIDTH * PATTERNS_HEIGHT];
-    unsigned char game_matrix[SCREEN_WIDTH * SCREEN_HEIGHT];
-    //background temporary registers
+    //background vram register
     unsigned char coarse_x; //tile x, 5 bits
     unsigned char coarse_y; //tile y, 5 bits
     unsigned char nametable_x; //nametable x, 1 bit
     unsigned char nametable_y; // nametable y, 1 bit
     unsigned char fine_x; //pixel x inside tile, 3 bits
     unsigned char fine_y; //pixel y inside tile, 3 bits
+    //background tram register
+    unsigned char t_coarse_x; //tile x, 5 bits
+    unsigned char t_coarse_y; //tile y, 5 bits
+    unsigned char t_nametable_x; //nametable x, 1 bit
+    unsigned char t_nametable_y; // nametable y, 1 bit
+    unsigned char t_fine_y; //pixel y inside tile, 3 bits
+
+    //background rendering registers
     unsigned char bg_next_tile_id; //coordinates of next tile
-    unsigned char bg_next_tile_attrib; //palette of next tile
+    unsigned char bg_next_tile_palette; //palette of next tile
     unsigned char bg_next_tile_lsb; //lsb of pattern to load on the tile
     unsigned char bg_next_tile_msb; //msb of pattern to load on the tile
     unsigned short bg_shifter_pattern[2]; 
-    unsigned short bg_shifter_attrib[2];
+    unsigned short bg_shifter_palette[2];
     //sprite registers
     unsigned char oam1[64];
     unsigned char oam2[8];
@@ -56,7 +62,11 @@ typedef struct ppu {
 
 //function prototypes
 void Ppu_init(Ppu *ppu);
+unsigned char Ppu_read(Ppu *ppu, unsigned short addr);
+void Ppu_write(Ppu *ppu, unsigned char data, unsigned short addr);
 void Ppu_draw(Ppu *ppu);
+void Ppu_drawPatterns(Ppu *ppu);
 void Ppu_loadPatterns(Ppu *ppu, unsigned char *chr_data);
+void Ppu_tick(Ppu *ppu);
 
 #endif

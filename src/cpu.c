@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include "ppu.h"
 #include "instructions.h"
 
 void Cpu_powerUp(Cpu *cpu) {
@@ -8,10 +9,28 @@ void Cpu_powerUp(Cpu *cpu) {
     cpu->s = 0xFD;
     cpu->pc = 0;
     cpu->p = 0x24;
+    cpu->totalCycles = 7;
 
     int i;
     for (i = 0; i < 0xFFFF; i++)
         cpu->mem[i] = 0;
+    
+    //pointing ppu regs to their place in the cpu mem
+    (cpu->ppu.ppuctrl) = &(cpu->mem[0x2000]);
+    (cpu->ppu.ppumask) = &(cpu->mem[0x2001]);
+    (cpu->ppu.ppustatus) = &(cpu->mem[0x2002]);
+    (cpu->ppu.oamaddr) = &(cpu->mem[0x2003]);
+    (cpu->ppu.oamdata) = &(cpu->mem[0x2004]);
+    (cpu->ppu.ppuscroll) = &(cpu->mem[0x2005]);
+    (cpu->ppu.ppuaddr) = &(cpu->mem[0x2006]);
+    (cpu->ppu.ppudata) = &(cpu->mem[0x2007]);
+    (cpu->ppu.oamdma) = &(cpu->mem[0x4014]);
+
+
+    //initializing ppu
+    Ppu_init(&(cpu->ppu));
+    printf("CPUMEM ADDR: %02X\n", *(&(cpu->mem[0x2002])));
+    printf("CPU PPUSCROLL: %02X\n", cpu->mem[0x2002]);
 }
 
 void Cpu_reset(Cpu *cpu) {
@@ -22,7 +41,28 @@ void Cpu_reset(Cpu *cpu) {
     cpu->p |= 0x04;
 }
 
-void Cpu_loadRom(Cpu *cpu, unsigned char *prg_data){
+unsigned char Cpu_read(Cpu *cpu, unsigned short addr) {
+    unsigned char data = cpu->mem[addr];
+    printf("%02X ", data);
+    //if reading from ppu registers
+    if ((addr == 0x2002) || (addr == 0x2007)) {
+        data = Ppu_read(&(cpu->ppu), addr);
+    }
+    return data;
+}
+
+void Cpu_write(Cpu *cpu, unsigned short addr, unsigned char data) {
+    printf("%02X ", data);
+    cpu->mem[addr] = data;
+    //if writing to ppu registers
+    if ((addr == 0x2000) | (addr == 0x2005) | (addr == 0x2006) | (addr == 0x2007)) {
+        //send data do ppu
+        Ppu_write(&(cpu->ppu), data, addr);
+    }
+}
+
+
+void Cpu_loadRom(Cpu *cpu, unsigned char *prg_data) {
     //mapper 0
     int i;
     for (i = 0; i < 16384 * 2; i++) {
@@ -30,9 +70,9 @@ void Cpu_loadRom(Cpu *cpu, unsigned char *prg_data){
     }
 
     //pc points to address in reset vector FFFC-FFFD
-    unsigned short addr_h = cpu->mem[0xFFFC];
+    unsigned short addr_h = cpu->mem[0xFFFD];
     addr_h <<= 8;
-    unsigned short addr_l = cpu->mem[0xFFFD];
+    unsigned short addr_l = cpu->mem[0xFFFC];
     unsigned short addr = addr_l | addr_h;
     cpu->pc = addr;
 
@@ -81,9 +121,9 @@ void Cpu_irq(Cpu *cpu) {
     cpu->p |= (1 >> I);
     Cpu_pushStack(cpu, cpu->p);
 
-    unsigned short addr_h = cpu->mem[0xFFFE];
+    unsigned short addr_h = cpu->mem[0xFFFF];
     addr_h <<= 8;
-    unsigned short addr_l = cpu->mem[0xFFFF];
+    unsigned short addr_l = cpu->mem[0xFFFE];
     unsigned short addr = addr_l | addr_h;
     cpu->pc = addr;
 
@@ -108,9 +148,9 @@ void Cpu_nmi(Cpu *cpu) {
     cpu->p |= (1 >> I);
     Cpu_pushStack(cpu, cpu->p);
 
-    unsigned short addr_h = cpu->mem[0xFFFA];
+    unsigned short addr_h = cpu->mem[0xFFFB];
     addr_h <<= 8;
-    unsigned short addr_l = cpu->mem[0xFFFB];
+    unsigned short addr_l = cpu->mem[0xFFFA];
     unsigned short addr = addr_l | addr_h;
     cpu->pc = addr;
 
@@ -119,9 +159,8 @@ void Cpu_nmi(Cpu *cpu) {
 }
 
 void Cpu_decode(Cpu *cpu) {
-
     //fetch opcode
-    unsigned char opcode = cpu->mem[cpu->pc];
+    unsigned char opcode = Cpu_read(cpu, cpu->pc);
     #ifdef DEBUG
     printf("%04X  ", cpu->pc);
     #endif
@@ -605,10 +644,14 @@ void Cpu_decode(Cpu *cpu) {
             XXX();
             break;
     }
+    if (cpu->ppu.nmi) {
+        Cpu_nmi(cpu);
+    }
 }
 
-unsigned char Cpu_tick(Cpu *cpu){
+unsigned char Cpu_time(Cpu *cpu){
     float cycle_time = 1 / ((float) CLOCK_FREQ); //in seconds
     usleep(cpu->cycleCounter * cycle_time * 1000000);
+    cpu->totalCycles += cpu->cycleCounter;
     return cpu->cycleCounter;
 }

@@ -17,6 +17,7 @@
     ],
     "files.associations": {
         "graphics.h": "c",
-        "ppu.h": "c"
+        "ppu.h": "c",
+        "cartridge.h": "c"
     }
 }

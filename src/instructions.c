@@ -2,7 +2,7 @@
 #include "cpu.h"
 
 void debug_print(Cpu *cpu){
-    printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X", cpu->a, cpu->x, cpu->y, cpu->p, cpu->s);
+    printf("A:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%u\n", cpu->a, cpu->x, cpu->y, cpu->p, cpu->s, cpu->totalCycles);
 }
 //more info on https://www.masswerk.at/6502/6502_instruction_set.html
 
@@ -13,9 +13,9 @@ unsigned char mode_acc(Cpu *cpu) {
 }
 
 unsigned short mode_abs(Cpu *cpu) {
-    unsigned char ll = cpu->mem[cpu->pc];
+    unsigned char ll = Cpu_read(cpu, cpu->pc);
     cpu->pc += 1;
-    unsigned char hh = cpu->mem[cpu->pc];
+    unsigned char hh = Cpu_read(cpu, cpu->pc);
     cpu->pc += 1;
 
     unsigned short addr = 0 | hh;
@@ -28,9 +28,9 @@ unsigned short mode_abs(Cpu *cpu) {
 }
 
 unsigned short mode_absx(Cpu *cpu) {
-    unsigned char ll = cpu->mem[(cpu->pc)];
+    unsigned char ll = Cpu_read(cpu, cpu->pc);;
     cpu->pc += 1;
-    unsigned char hh = cpu->mem[(cpu->pc)];
+    unsigned char hh = Cpu_read(cpu, cpu->pc);;
     cpu->pc += 1;
 
     unsigned short addr = 0 | hh;
@@ -49,9 +49,9 @@ unsigned short mode_absx(Cpu *cpu) {
 }
 
 unsigned short mode_absy(Cpu *cpu) {
-    unsigned char ll = cpu->mem[(cpu->pc)];
+    unsigned char ll = Cpu_read(cpu, cpu->pc);
     cpu->pc += 1;
-    unsigned char hh = cpu->mem[(cpu->pc)];
+    unsigned char hh = Cpu_read(cpu, cpu->pc);
     cpu->pc += 1;
 
     unsigned short addr = 0 | hh;
@@ -69,7 +69,7 @@ unsigned short mode_absy(Cpu *cpu) {
 }
 
 unsigned char mode_imm(Cpu *cpu) {
-    unsigned char operand = cpu->mem[cpu->pc];
+    unsigned char operand = Cpu_read(cpu, cpu->pc);
     cpu->pc += 1;
 
     cpu->cycleCounter += 2;
@@ -83,10 +83,10 @@ unsigned char mode_impl(Cpu *cpu) {
 }
 
 unsigned short mode_ind(Cpu *cpu) {
-    unsigned char pointer_ll = cpu->mem[cpu->pc];
+    unsigned char pointer_ll = Cpu_read(cpu, cpu->pc);
     cpu->pc += 1;
 
-    unsigned char pointer_hh = cpu->mem[cpu->pc];
+    unsigned char pointer_hh = Cpu_read(cpu, cpu->pc);
     cpu->pc += 1;
     
     unsigned short pointer = 0 | pointer_hh;  
@@ -98,14 +98,14 @@ unsigned short mode_ind(Cpu *cpu) {
     //it takes from last of page and first of same page
     //ex: instead of reading from $C0FF/$C100 it reads from $C0FF/$C000
     if ((pointer & 0xFF) == 0xFF) {
-        addr |= cpu->mem[(pointer & 0xFF00)];
+        addr |= Cpu_read(cpu, pointer & 0xFF00);
         addr = addr << 8;
-        addr |= cpu->mem[pointer];
+        addr |= Cpu_read(cpu, pointer);
     }
     else {
-        addr |= cpu->mem[pointer + 1];
+        addr |= Cpu_read(cpu, pointer + 1);
         addr = addr << 8;
-        addr |= cpu->mem[pointer];
+        addr |= Cpu_read(cpu, pointer);
     }
 
     //gets decreased
@@ -115,13 +115,13 @@ unsigned short mode_ind(Cpu *cpu) {
 }
 
 unsigned short mode_indx(Cpu *cpu) {
-    unsigned char zpg_pointer = cpu->mem[cpu->pc] + cpu->x;
+    unsigned char zpg_pointer = Cpu_read(cpu, cpu->pc) + cpu->x;
     cpu->pc +=1;
 
-    unsigned char addr_ll = cpu->mem[zpg_pointer];
-    unsigned char addr_hh = cpu->mem[zpg_pointer + 1];
+    unsigned char addr_ll = Cpu_read(cpu, zpg_pointer);
+    unsigned char addr_hh = Cpu_read(cpu, zpg_pointer + 1);
     if (zpg_pointer == 0xFF)
-        addr_hh = cpu->mem[0];
+        addr_hh = Cpu_read(cpu, 0);
     unsigned short addr = 0 | addr_hh;
     addr = addr << 8;
     addr |= addr_ll;
@@ -132,13 +132,13 @@ unsigned short mode_indx(Cpu *cpu) {
 }
 
 unsigned short mode_indy(Cpu *cpu) {
-    unsigned char zpg_pointer = cpu->mem[cpu->pc];
+    unsigned char zpg_pointer = Cpu_read(cpu, cpu->pc);
     cpu->pc +=1;
 
-    unsigned char addr_ll = cpu->mem[zpg_pointer];
-    unsigned char addr_hh = cpu->mem[zpg_pointer + 1];
+    unsigned char addr_ll = Cpu_read(cpu, zpg_pointer);
+    unsigned char addr_hh = Cpu_read(cpu, zpg_pointer + 1);
     if (zpg_pointer == 0xFF)
-        addr_hh = cpu->mem[0];
+        addr_hh = Cpu_read(cpu, 0);
 
     unsigned short addr = 0 | addr_hh;
     addr = addr << 8;
@@ -154,7 +154,7 @@ unsigned short mode_indy(Cpu *cpu) {
 }
 
 unsigned short mode_rel(Cpu *cpu) {
-    char offset = cpu->mem[cpu->pc];
+    char offset = Cpu_read(cpu, cpu->pc);
     unsigned short addr;
 
     cpu->pc += 1;
@@ -173,7 +173,7 @@ unsigned short mode_rel(Cpu *cpu) {
 }
 
 unsigned short mode_zpg(Cpu *cpu) {
-    unsigned char ll = cpu->mem[cpu->pc];
+    unsigned char ll = Cpu_read(cpu, cpu->pc);
     cpu->pc += 1;
 
     unsigned short addr = 0 | ll;
@@ -184,7 +184,7 @@ unsigned short mode_zpg(Cpu *cpu) {
 }
 
 unsigned short mode_zpgx(Cpu *cpu) {
-    unsigned char zpg_pointer = cpu->mem[cpu->pc];
+    unsigned char zpg_pointer = Cpu_read(cpu, cpu->pc);
     cpu->pc += 1;
 
     zpg_pointer += cpu->x;
@@ -195,7 +195,7 @@ unsigned short mode_zpgx(Cpu *cpu) {
 }
 
 unsigned short mode_zpgy(Cpu *cpu) {
-    unsigned char zpg_pointer = cpu->mem[cpu->pc];
+    unsigned char zpg_pointer = Cpu_read(cpu, cpu->pc);
     cpu->pc += 1;
 
     zpg_pointer += cpu->y;
@@ -258,7 +258,7 @@ unsigned char fetchOperand(Cpu *cpu, int addr_mode) {
             operand = mode_impl(cpu);
             break;
         default:
-            operand = cpu->mem[fetchAddr(cpu, addr_mode)];
+            operand = Cpu_read(cpu, fetchAddr(cpu, addr_mode));
     }
     return operand;
 }
@@ -329,7 +329,7 @@ void STA(Cpu *cpu, int addr_mode) {
     #endif
 
     unsigned short addr = fetchAddr(cpu, addr_mode);
-    cpu->mem[addr] = cpu->a;
+    Cpu_write(cpu, addr, cpu->a);
 
     //timing adjustments
     if (addr_mode == absx)
@@ -348,7 +348,7 @@ void STX(Cpu *cpu, int addr_mode) {
 
     unsigned short addr = fetchAddr(cpu, addr_mode);
 
-    cpu->mem[addr] = cpu->x;
+    Cpu_write(cpu, addr, cpu->x);
 }
 
 void STY(Cpu *cpu, int addr_mode) {
@@ -359,7 +359,7 @@ void STY(Cpu *cpu, int addr_mode) {
 
     unsigned short addr = fetchAddr(cpu, addr_mode);
 
-    cpu->mem[addr] = cpu->y;
+    Cpu_write(cpu, addr, cpu->y);
 }
 
 void TAX(Cpu *cpu, int addr_mode) {
@@ -548,7 +548,9 @@ void DEC(Cpu *cpu, int addr_mode) {
     debug_print(cpu);
     #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
-    cpu->mem[addr] -= 1;
+    
+    unsigned char data = cpu->mem[addr] - 1;
+    Cpu_write(cpu, addr, data);
     
     //setting Z and N flags
     if ((cpu->mem[addr] & 0x80) == 0x80)
@@ -614,10 +616,11 @@ void INC(Cpu *cpu, int addr_mode) {
     debug_print(cpu);
     #endif
     unsigned short addr = fetchAddr(cpu, addr_mode);
-    if (cpu->mem[addr] == 0xFF)
-        cpu->mem[addr] = 0;
+    unsigned char data = cpu->mem[addr];
+    if (data == 0xFF)
+        Cpu_write(cpu, addr, 0);
     else
-        cpu->mem[addr] += 0x01;
+        Cpu_write(cpu, addr, data + 1);
     
     //setting Z and N flags
     if ((cpu->mem[addr] & 0x80) == 0x80)
@@ -843,7 +846,8 @@ void ASL(Cpu *cpu, int addr_mode) {
         unsigned short addr = fetchAddr(cpu, addr_mode);
         shifted_bit = cpu->mem[addr] & 0x80;
 
-        cpu->mem[addr] = cpu->mem[addr] << 1;
+        unsigned char data = cpu->mem[addr];
+        Cpu_write(cpu, addr, data << 1);
 
         //setting C flag
         if (shifted_bit == 0x80)
@@ -901,7 +905,8 @@ void LSR(Cpu *cpu, int addr_mode) {
         unsigned short addr = fetchAddr(cpu, addr_mode);
         shifted_bit = cpu->mem[addr] & 0x01;
 
-        cpu->mem[addr] = cpu->mem[addr] >> 1;
+        unsigned char data = cpu->mem[addr];
+        Cpu_write(cpu, addr, data >> 1);
 
         //setting C flag
         if (shifted_bit == 0x01)
@@ -965,8 +970,9 @@ void ROL(Cpu *cpu, int addr_mode) {
 
         unsigned char prev_carry = cpu->p & 0x01;
 
-        cpu->mem[addr] = cpu->mem[addr] << 1;
-        cpu->mem[addr] |= prev_carry;
+        unsigned char data = cpu->mem[addr] << 1;
+        data |= prev_carry;
+        Cpu_write(cpu, addr, data);
 
         //setting C flag
         if (shifted_bit == 0x80)
@@ -1032,8 +1038,9 @@ void ROR(Cpu *cpu, int addr_mode) {
         unsigned char prev_carry = cpu->p & 0x01;
         prev_carry <<= 7;
 
-        cpu->mem[addr] = cpu->mem[addr] >> 1;
-        cpu->mem[addr] |= prev_carry;
+        unsigned char data = cpu->mem[addr] >> 1;
+        data |= prev_carry;
+        Cpu_write(cpu, addr, data);
 
         //setting C flag
         if (shifted_bit == 0x01)
@@ -1415,7 +1422,9 @@ void BRK(Cpu *cpu, int addr_mode) {
 
     //timing adjustments
     cpu->cycleCounter += 5;
-}
+
+    printf("\n$6000: %02X\n", cpu->mem[0x6000]);
+ }
 
 
 void RTI(Cpu *cpu, int addr_mode) {
