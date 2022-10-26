@@ -8,7 +8,7 @@ void Nes_loadCartridge(Nes *nes, char *filename) {
 
 void Nes_init(Nes *nes) {
     Cpu_powerUp(&(nes->cpu));
-    Nes_loadCartridge(nes, "../roms/nestest.nes");
+    Nes_loadCartridge(nes, "../roms/DK.nes");
     nes->globalCyclesCounter = 0;
 }
 

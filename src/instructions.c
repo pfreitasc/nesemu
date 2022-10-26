@@ -266,13 +266,14 @@ unsigned char fetchOperand(Cpu *cpu, int addr_mode) {
 //instructions
 //transfer instructions
 void LDA(Cpu *cpu, int addr_mode) {
+    
+    cpu->a = fetchOperand(cpu, addr_mode);
+    
     #ifdef DEBUG
     printf("LDA ");
     debug_print(cpu);
     #endif
-    
-    cpu->a = fetchOperand(cpu, addr_mode);
-    
+
     //setting Z and N flags
     if ((cpu->a & 0x80) == 0x80)
         Cpu_setFlag(cpu, N);
@@ -285,13 +286,14 @@ void LDA(Cpu *cpu, int addr_mode) {
 }
 
 void LDX(Cpu *cpu, int addr_mode) {
+
+    cpu->x = fetchOperand(cpu, addr_mode);
+    
     #ifdef DEBUG
     printf("LDX ");
     debug_print(cpu);
     #endif
 
-    cpu->x = fetchOperand(cpu, addr_mode);
-    
     //setting Z and N flags
     if ((cpu->x & 0x80) == 0x80)
         Cpu_setFlag(cpu, N);
@@ -481,11 +483,13 @@ void TYA(Cpu *cpu, int addr_mode) {
 
 //stack instructions
 void PHA(Cpu *cpu, int addr_mode) {
+    fetchOperand(cpu, addr_mode);
+
     #ifdef DEBUG
     printf("PHA ");
     debug_print(cpu);
     #endif
-    fetchOperand(cpu, addr_mode);
+
     Cpu_pushStack(cpu, cpu->a);
 
     //timing adjustments
@@ -1132,12 +1136,14 @@ void SEI(Cpu *cpu, int addr_mode) {
 
 //comparisons
 void CMP(Cpu *cpu, int addr_mode) {
+
+    unsigned char operand = fetchOperand(cpu, addr_mode);
+
     #ifdef DEBUG
     printf("CMP ");
     debug_print(cpu);
     #endif
 
-    unsigned char operand = fetchOperand(cpu, addr_mode);
     unsigned short result = (unsigned short) cpu->a - (unsigned short) operand;
 
     //setting C flag
@@ -1247,12 +1253,14 @@ void BCS(Cpu *cpu, int addr_mode) {
 }
 
 void BEQ(Cpu *cpu, int addr_mode) {
+
+    unsigned short branch_addr = fetchAddr(cpu, addr_mode);
+    
     #ifdef DEBUG
     printf("BEQ ");
     debug_print(cpu);
     #endif
 
-    unsigned short branch_addr = fetchAddr(cpu, addr_mode);
     if ((cpu->p & 0x02) == 0x02) {
         if ((branch_addr >> 8) != (cpu->pc >> 8))
             cpu->cycleCounter += 1;
@@ -1292,12 +1300,14 @@ void BMI(Cpu *cpu, int addr_mode) {
 }
 
 void BPL(Cpu *cpu, int addr_mode) {
+
+    unsigned short branch_addr = fetchAddr(cpu, addr_mode);
+    
     #ifdef DEBUG
     printf("BPL ");
     debug_print(cpu);
     #endif
-
-    unsigned short branch_addr = fetchAddr(cpu, addr_mode);
+    
     if ((cpu->p & 0x80) == 0x00) {
         if ((branch_addr >> 8) != (cpu->pc >> 8))
             cpu->cycleCounter += 1;

@@ -46,7 +46,7 @@ typedef struct cpu {
     unsigned char a; //accumulator
     unsigned char x, y; //indexes
     unsigned short pc; //progmem counter
-    unsigned short s; //stack pointer
+    unsigned char s; //stack pointer
     unsigned char p; //status register
     unsigned char mem[0xFFFF]; //cpu memory
     unsigned char cycleCounter; //number of cycles needed to execute current instruction
