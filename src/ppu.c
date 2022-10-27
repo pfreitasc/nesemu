@@ -10,6 +10,11 @@ unsigned char Ppu_getIncrement(Ppu *ppu) {
         return 1;
 }
 
+unsigned short Ppu_getVram(Ppu *ppu) {
+    unsigned short vram = (((unsigned short) ppu->fine_y << 12) | ((unsigned short) ppu->nametable_y << 11) | ((unsigned short) ppu->nametable_x << 10) | ((unsigned short) ppu->coarse_y << 5) | ((unsigned short) ppu->coarse_x));
+    return vram;
+}
+
 unsigned char Ppu_read(Ppu *ppu, unsigned short addr) {
     unsigned char data;
     switch (addr) {
@@ -44,10 +49,12 @@ unsigned char Ppu_read(Ppu *ppu, unsigned short addr) {
             break;
         default:
     }
+    printf("\n-- PPU read --\nreg: %04X\ndata: %02X\n", addr, data);
     return data;
 }
 
 void Ppu_write(Ppu *ppu, unsigned char data, unsigned short addr) {
+    printf("\n-- PPU write --\nreg: %04X\nppuaddr: %04X\ndata: %02X\n", addr, ppu->ppuaddr, data);
     switch (addr) {
     case 0x2000:
         ppu->ppuctrl = data;
@@ -106,7 +113,7 @@ unsigned int Ppu_getPixelVal(Ppu *ppu, unsigned char pixel, unsigned char pal) {
     if (pixel == 0)
         colored_pixel = ppu->graphics.palColor[ppu->mem[PALETTE_MEM_START]];
     else
-        colored_pixel = ppu->graphics.palColor[ppu->mem[PALETTE_MEM_START] + pal*4 + pixel - 1];
+        colored_pixel = ppu->graphics.palColor[ppu->mem[PALETTE_MEM_START] + pal*4 + pixel];
     return colored_pixel;
 }
 
@@ -177,11 +184,6 @@ void Ppu_init(Ppu *ppu) {
     Graphics_init(&(ppu->graphics));
 }
 
-unsigned short Ppu_getVram(Ppu *ppu) {
-    unsigned short vram = (((unsigned short) ppu->fine_y << 12) | ((unsigned short) ppu->nametable_y << 11) | ((unsigned short) ppu->nametable_x << 10) | ((unsigned short) ppu->coarse_y << 5) | ((unsigned short) ppu->coarse_x));
-    return vram;
-}
-
  void Ppu_tick(Ppu *ppu) {
     //on a visible scanline (or pre-render)
     if ((ppu->scanline >= -1) && (ppu->scanline < 240)) {
@@ -223,7 +225,7 @@ unsigned short Ppu_getVram(Ppu *ppu) {
                     ppu->bg_next_tile_id = ppu->mem[0x2000 | (Ppu_getVram(ppu) & 0x0FFF)];
                     break;
                 case 4: //AT byte (cycle = 4)
-                    ppu->bg_next_tile_palette = ppu->mem[0x23C0 | ((unsigned short) ppu->nametable_y << 11) | (ppu->nametable_x << 10) | ((ppu->coarse_y >> 2) << 3) | (ppu->coarse_x >> 2)];
+                    ppu->bg_next_tile_palette = ppu->mem[0x23C0 | ((unsigned short) ppu->nametable_y << 11) | ((unsigned short) ppu->nametable_x << 10) | ((ppu->coarse_y >> 2) << 3) | (ppu->coarse_x >> 2)];
                     //choose which one of the 4 2x2 tile sets
                     if (ppu->coarse_y & 0x02)
                         ppu->bg_next_tile_palette >>= 4;
@@ -232,10 +234,10 @@ unsigned short Ppu_getVram(Ppu *ppu) {
                     ppu->bg_next_tile_palette &= 0x03;
                     break;
                 case 6: //Low BG tile byte (cycle = 6)
-                    ppu->bg_next_tile_lsb = ppu->mem[((ppu->ppuctrl & 0x10) << 3) + ((unsigned short) ppu->bg_next_tile_id << 4) + (ppu->fine_y)];
+                    ppu->bg_next_tile_lsb = ppu->mem[(((unsigned short) ppu->ppuctrl & 0x0010) << 8) + ((unsigned short) ppu->bg_next_tile_id << 4) + (ppu->fine_y)];
                     break;
                 case 0: //High BG tile byte (cycle = 8, 0)
-                    ppu->bg_next_tile_lsb = ppu->mem[((ppu->ppuctrl & 0x10) << 3) + ((unsigned short) ppu->bg_next_tile_id << 4) + (ppu->fine_y) + 8];
+                    ppu->bg_next_tile_lsb = ppu->mem[(((unsigned short) ppu->ppuctrl & 0x0010) << 8) + ((unsigned short) ppu->bg_next_tile_id << 4) + (ppu->fine_y) + 8];
                     if ((ppu->ppumask & 0x08) | (ppu->ppumask & 0x10)) {
                         if (ppu->coarse_x == 31) {
                             ppu->coarse_x = 0;
@@ -326,9 +328,9 @@ unsigned short Ppu_getVram(Ppu *ppu) {
         unsigned char bg_pal1 = (ppu->bg_shifter_palette[1] & bit_mux) > 0;
         bg_palette = (bg_pal1 << 1) | bg_pal0;
     }
-
-    ppu->graphics.game_viewport[(ppu->cycle - 1) + (SCREEN_WIDTH * ppu->scanline)] = Ppu_getPixelVal(ppu, bg_pixel, bg_palette);
-
+    if ((ppu->scanline >= 0) && (ppu->scanline <= 239) && (ppu->cycle >= 1) && (ppu->cycle <= 256)) {
+        ppu->graphics.game_viewport[(ppu->cycle - 1) + (SCREEN_WIDTH * ppu->scanline)] = Ppu_getPixelVal(ppu, bg_pixel, bg_palette);
+    }
     //incrementing scanline and/or cycle
     ppu->cycle += 1;
     if (ppu->cycle >= 341) {

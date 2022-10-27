@@ -1,5 +1,4 @@
 #include "cpu.h"
-#include "ppu.h"
 #include "instructions.h"
 
 void Cpu_powerUp(Cpu *cpu) {
@@ -34,6 +33,11 @@ unsigned char Cpu_read(Cpu *cpu, unsigned short addr) {
     if (((addr >= 0x2000) && (addr <= 0x2007)) || (addr == 4014)) {
         data = Ppu_read(&(cpu->ppu), addr);
     }
+    else if ((addr >= 0x4016) && (addr <= 4017)) {
+        data = (cpu->controller.pad_state[addr & 0x0001] & 0x80) > 0;
+        cpu->controller.pad_state[addr & 0x0001] <<= 1;
+    }
+    
     return data;
 }
 
@@ -44,6 +48,9 @@ void Cpu_write(Cpu *cpu, unsigned short addr, unsigned char data) {
     if (((addr >= 0x2000) && (addr <= 0x2007)) | (addr == 4014)) {
         //send data do ppu
         Ppu_write(&(cpu->ppu), data, addr);
+    }
+    else if ((addr >= 0x4016) && (addr <= 4017)) {
+        cpu->controller.pad_state[addr & 0x0001] = cpu->controller.pad[addr & 0x0001];
     }
 }
 

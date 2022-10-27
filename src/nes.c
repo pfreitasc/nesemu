@@ -8,19 +8,46 @@ void Nes_loadCartridge(Nes *nes, char *filename) {
 
 void Nes_init(Nes *nes) {
     Cpu_powerUp(&(nes->cpu));
-    Nes_loadCartridge(nes, "../roms/DK.nes");
+    Nes_loadCartridge(nes, "../roms/nestest.nes");
     nes->globalCyclesCounter = 0;
+}
+
+void Nes_updateController(Nes *nes) {
+    SDL_Event event;
+    while (SDL_PollEvent(&event)) {
+        nes->cpu.controller.pad[0] = 0;
+        if (event.type == SDL_KEYDOWN) {
+            if (event.key.keysym.sym == SDLK_x)
+                    nes->cpu.controller.pad[0] |= 0x80;
+            if (event.key.keysym.sym == SDLK_z)
+                    nes->cpu.controller.pad[0] |= 0x40;
+            if (event.key.keysym.sym == SDLK_a)
+                    nes->cpu.controller.pad[0] |= 0x20;
+            if (event.key.keysym.sym == SDLK_s)
+                    nes->cpu.controller.pad[0] |= 0x10;
+            if (event.key.keysym.sym == SDLK_UP)
+                    nes->cpu.controller.pad[0] |= 0x08;
+            if (event.key.keysym.sym == SDLK_DOWN)
+                    nes->cpu.controller.pad[0] |= 0x04;
+            if (event.key.keysym.sym == SDLK_LEFT)
+                    nes->cpu.controller.pad[0] |= 0x02;
+            if (event.key.keysym.sym == SDLK_RIGHT)
+                    nes->cpu.controller.pad[0] |= 0x01;
+            }
+        }
+    }
+    printf("\nController 0: %02X\n", nes->cpu.controller.pad[0]);
 }
 
 void Nes_mainLoop(Nes *nes) {
     while (1) {
-        Ppu_tick(&(nes->cpu.ppu));
-
-        if ((nes->globalCyclesCounter % 3) == 0) {
-            Cpu_decode(&(nes->cpu));
-            Cpu_time(&(nes->cpu));
+        Nes_updateController(nes);
+        Cpu_decode(&(nes->cpu));
+        unsigned char cpu_clocks = Cpu_time(&(nes->cpu));
+        unsigned char i;
+        for (i = 0; i < cpu_clocks * 3; i++) {
+            Ppu_tick(&(nes->cpu.ppu));
         }
-
         nes->globalCyclesCounter += 1;
     }
 }

@@ -13,7 +13,7 @@ typedef struct ppu {
     unsigned char oamaddr; //$2003 in cpu mem
     unsigned char oamdata; //$2004 in cpu mem
     unsigned char ppuscroll; //$2005 in cpu mem
-    unsigned char ppuaddr; //$2006 in cpu mem
+    unsigned short ppuaddr; //$2006 in cpu mem
     unsigned char ppudata; //$2007 in cpu mem
     unsigned char oamdma; //$4014 in cpu mem
     //internal registers
