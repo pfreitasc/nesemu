@@ -5,6 +5,13 @@
 
 #define PALETTE_MEM_START 0x3F00
 
+typedef struct oam {
+    unsigned char y;
+    unsigned char id;
+    unsigned char attribute;
+    unsigned char x;
+}Oam;
+
 typedef struct ppu {
     //cpu registers
     unsigned char ppuctrl; //$2000 in cpu mem
@@ -47,11 +54,15 @@ typedef struct ppu {
     unsigned short bg_shifter_pattern[2]; 
     unsigned short bg_shifter_palette[2];
     //sprite registers
-    unsigned char oam1[64];
-    unsigned char oam2[8];
-    unsigned char oam_pattern_shift[16];
-    unsigned char oam_latch[8];
-    unsigned char oam_counter[8];
+    Oam oam[64];
+    unsigned char *pOam;
+    Oam scanline_sprites[8];
+    unsigned char sprite_count;
+    unsigned char oam_pattern_shift_lo[8];
+    unsigned char oam_pattern_shift_hi[8];
+    //sprite zero collision flags
+    unsigned char spriteZeroHitPossible;
+    unsigned char spriteZeroBeingRendered;
     //memory
     unsigned char mem[0x3FFF];  //0000-1FFF: pattern memory
                                 //2000-2FFF: nametables

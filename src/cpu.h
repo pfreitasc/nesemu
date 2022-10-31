@@ -51,7 +51,15 @@ typedef struct cpu {
     unsigned char p; //status register
     unsigned char mem[0xFFFF]; //cpu memory
     unsigned char cycleCounter; //number of cycles needed to execute current instruction
+    unsigned char cycleDec; //gets decremented each cycle and updated on new instruction
     unsigned int totalCycles; //number of cycles elapsed since beginnig of emulation
+    //dma regs and flags
+    unsigned char dma_page;
+    unsigned char dma_addr;
+    unsigned char dma_data;
+    unsigned char dma_dummy;
+    unsigned char dma_transfer;
+    //components
     Controller controller;
     Ppu ppu;
 } Cpu;
@@ -62,12 +70,12 @@ void Cpu_reset(Cpu *cpu);
 void Cpu_loadRom(Cpu *cpu, unsigned char *prg_data);
 void Cpu_setFlag(Cpu *cpu, int flag);
 void Cpu_clearFlag(Cpu *cpu, int flag);
-void Cpu_decode(Cpu *cpu);
 void Cpu_nmi(Cpu *cpu);
 unsigned char Cpu_popStack(Cpu *cpu);
 void Cpu_pushStack(Cpu *cpu, unsigned char data);
-unsigned char Cpu_time(Cpu *cpu);
+//unsigned char Cpu_time(Cpu *cpu);
 void Cpu_write(Cpu *cpu, unsigned short addr, unsigned char data);
 unsigned char Cpu_read(Cpu *cpu, unsigned short addr);
+void Cpu_tick(Cpu *cpu);
 
 #endif

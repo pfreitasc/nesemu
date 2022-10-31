@@ -9,6 +9,8 @@ void Cpu_powerUp(Cpu *cpu) {
     cpu->pc = 0;
     cpu->p = 0x24;
     cpu->totalCycles = 7;
+    cpu->dma_dummy = 0x01;
+    cpu->dma_transfer = 0x00;
 
     int i;
     for (i = 0; i < 0xFFFF; i++)
@@ -30,10 +32,10 @@ unsigned char Cpu_read(Cpu *cpu, unsigned short addr) {
     unsigned char data = cpu->mem[addr];
     //printf("%02X ", data);
     //if reading from ppu registers
-    if (((addr >= 0x2000) && (addr <= 0x2007)) || (addr == 0x4014)) {
+    if ((addr >= 0x2000) && (addr <= 0x2007)) {
         data = Ppu_read(&(cpu->ppu), addr);
     }
-    if ((addr >= 0x4016) && (addr <= 0x4017)) {
+    else if ((addr >= 0x4016) && (addr <= 0x4017)) {
         data = (cpu->controller.pad_state[addr & 0x0001] & 0x80) > 0;
         cpu->controller.pad_state[addr & 0x0001] <<= 1;
     }
@@ -46,9 +48,15 @@ void Cpu_write(Cpu *cpu, unsigned short addr, unsigned char data) {
     cpu->mem[addr] = data;
     //printf("\nCPU writing\nData: %02X\nAddr: %04X\n", data, addr);
     //if writing to ppu registers
-    if (((addr >= 0x2000) && (addr <= 0x2007)) | (addr == 0x4014)) {
+    if ((addr >= 0x2000) && (addr <= 0x2007)) {
         //send data do ppu
         Ppu_write(&(cpu->ppu), data, addr);
+    }
+    else if (addr == 0x4014) {
+        //oam transfer begins
+        cpu->dma_page = data;
+        cpu->dma_addr = 0x00;
+        cpu->dma_transfer = 0x01;
     }
     if ((addr >= 0x4016) && (addr <= 0x4017)) {
         cpu->controller.pad_state[addr & 0x0001] = cpu->controller.pad[addr & 0x0001];
@@ -643,9 +651,22 @@ void Cpu_decode(Cpu *cpu) {
     }
 }
 
+void Cpu_tick(Cpu *cpu) {
+    if (cpu->cycleDec == 0) {
+        Cpu_decode(cpu);
+        cpu->cycleDec = cpu->cycleCounter;
+    }
+    else {
+        cpu->cycleDec -= 1;
+        cpu->totalCycles += 1;
+    }
+}
+
+/*
 unsigned char Cpu_time(Cpu *cpu){
     float cycle_time = 1 / ((float) CLOCK_FREQ); //in seconds
     //usleep(cpu->cycleCounter * cycle_time * 1000000);
     cpu->totalCycles += cpu->cycleCounter;
     return cpu->cycleCounter;
 }
+*/

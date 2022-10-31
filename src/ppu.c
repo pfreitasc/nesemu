@@ -18,10 +18,6 @@ unsigned short Ppu_getVram(Ppu *ppu) {
 unsigned char Ppu_read(Ppu *ppu, unsigned short addr) {
     unsigned char data;
     switch (addr) {
-        case 0x2000: //control - not readable
-            break;
-        case 0x2001: //mask - not readable
-            break;
         case 0x2002: //status
             ppu->addr_latch = 0;
             ppu->ppustatus &= 0xE0;
@@ -29,13 +25,9 @@ unsigned char Ppu_read(Ppu *ppu, unsigned short addr) {
             data = ppu->ppustatus;
             ppu->ppustatus &= 0x7F;
             break;
-        case 0x2003: //oamaddr
-            break;
         case 0x2004: //oamdata
-            break;
-        case 0x2005: //scroll - not readable
-            break;
-        case 0x2006: //ppuaddr - not readable
+            data = ppu->pOam[ppu->oamaddr];
+            ppu->oamdata = data;
             break;
         case 0x2007: //ppudata
             data = ppu->read_buffer;
@@ -66,6 +58,12 @@ void Ppu_write(Ppu *ppu, unsigned char data, unsigned short addr) {
         break;
     case 0x2001:
         ppu->ppumask = data;
+        break;
+    case 0x2003:
+        ppu->oamaddr = data;
+        break;
+    case 0x2004:
+        ppu->pOam[ppu->oamaddr] = data;
         break;
     case 0x2005:
         if (ppu->addr_latch == 0) {
@@ -179,13 +177,24 @@ void Ppu_init(Ppu *ppu) {
     ppu->nametable_y = 0;
     ppu->fine_y = 0;
     ppu->fine_x = 0;
+    ppu->spriteZeroHitPossible = 0;
+    ppu->spriteZeroBeingRendered = 0;
+    ppu->pOam = (unsigned char*) ppu->oam;
 
     Graphics_init(&(ppu->graphics));
+}
+
+unsigned char flipbyte (unsigned char b) {
+    b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
+    b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
+    b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
+    return b;
 }
 
  void Ppu_tick(Ppu *ppu) {
     //on a visible scanline (or pre-render)
     if ((ppu->scanline >= -1) && (ppu->scanline < 240)) {
+        //background rendering
         if ((ppu->scanline == 0) && (ppu->cycle == 0)) {
             //cycle 0 is skipped on scanline 0
             ppu->cycle = 1;
@@ -299,6 +308,111 @@ void Ppu_init(Ppu *ppu) {
                 ppu->coarse_y = ppu->t_coarse_y;
             }
         }
+        //foreground rendering
+        if ((ppu->cycle == 257) && (ppu->scanline >= 0)) {
+            //reached end of visible scanline
+            //reset sprite count for next line
+            ppu->sprite_count = 0;
+            //clear sprites and shifters for next line
+            unsigned char i;
+            for (i = 0; i < 8; i++) {
+                ppu->scanline_sprites[i].y = 0;
+                ppu->scanline_sprites[i].attribute = 0;
+                ppu->scanline_sprites[i].id = 0;
+                ppu->scanline_sprites[i].x = 0;
+                ppu->oam_pattern_shift_lo[i] = 0;
+                ppu->oam_pattern_shift_hi[i] = 0;
+            }
+
+            //going to reavaluate sprite 0 possibility
+            ppu->spriteZeroHitPossible = 0x00;
+
+            //iterate to find first 8 sprites in next scanline
+            unsigned char nOamEntry = 0;
+            while ((nOamEntry < 64) && (ppu->sprite_count < 9)) {
+                //calculate if sprite is visible
+                unsigned char diff = ((unsigned short) ppu->scanline - (unsigned short)ppu->oam[nOamEntry].y);
+                if ((diff >= 0) && (diff < ((ppu->ppuctrl & 0x20) ? 16 : 8))) {
+                    //sprite is visible
+                    if (ppu->sprite_count < 8) {
+                        //check if there might be a sprite 0 hit
+                        if (nOamEntry == 0) {  
+                            ppu->spriteZeroHitPossible == 0x01;
+                        }
+                        //copy sprite from oam to next line sprites
+                        ppu->scanline_sprites[ppu->sprite_count].y = ppu->oam[nOamEntry].y;
+                        ppu->scanline_sprites[ppu->sprite_count].attribute = ppu->oam[nOamEntry].attribute;
+                        ppu->scanline_sprites[ppu->sprite_count].id = ppu->oam[nOamEntry].id;
+                        ppu->scanline_sprites[ppu->sprite_count].x = ppu->oam[nOamEntry].x;
+                        ppu->sprite_count += 1;
+                    }
+                }
+                nOamEntry += 1;
+            }
+            //finished evaluating next scanline sprites
+            if (ppu->sprite_count > 8)
+                ppu->ppustatus |= 0x20;
+        }
+        
+        if (ppu->cycle == 340) {
+            //end of scanline, preparing shifters with the next line sprites
+            unsigned char i;
+            for (i = 0; i < ppu->sprite_count; i++) {
+                //find patterns for each sprite
+                unsigned char sprite_pattern_bits_lo, sprite_pattern_bits_hi;
+                unsigned char sprite_pattern_addr_lo, sprite_pattern_addr_hi;
+                if ((ppu->ppuctrl & 0x20) == 0) {
+                    //8x8 sprite mode
+                    if ((ppu->scanline_sprites[i].attribute & 0x80) == 0) {
+                        //sprite is not flipped vertically
+                        sprite_pattern_addr_lo = (((unsigned short) ppu->ppuctrl & 0x0008) << 9) | (ppu->scanline_sprites[i].id << 4) | (ppu->scanline - ppu->scanline_sprites[i].y); 
+                    }
+                    else {
+                        //sprite is flipped vertically
+                        sprite_pattern_addr_lo = (((unsigned short) ppu->ppuctrl & 0x0008) << 9) | (ppu->scanline_sprites[i].id << 4) | (7 - ppu->scanline - ppu->scanline_sprites[i].y); 
+                    }
+                }
+                else {
+                    //8x16 sprite mode
+                    if ((ppu->scanline_sprites[i].attribute & 0x80) == 0) {
+                        //not flipped vertically
+                        if (ppu->scanline - ppu->scanline_sprites[i].y < 8) {
+                            //reading top half tile
+                            sprite_pattern_addr_lo = (((ppu->scanline_sprites[i].id & 0x01) << 12) | ((ppu->scanline_sprites[i].id & 0xFE) << 4) | ((ppu->scanline - ppu->scanline_sprites[i].y) & 0x07));
+                        }
+                        else {
+                            //reading bottom half tile
+                            sprite_pattern_addr_lo = (((ppu->scanline_sprites[i].id & 0x01) << 12) | (((ppu->scanline_sprites[i].id & 0xFE) + 1) << 4) | ((ppu->scanline - ppu->scanline_sprites[i].y) & 0x07));
+                        }
+                    }
+                    else {
+                        //flipped vertically
+                        if (ppu->scanline - ppu->scanline_sprites[i].y < 8) {
+                            //reading top half tile
+                            sprite_pattern_addr_lo = (((ppu->scanline_sprites[i].id & 0x01) << 12) | (((ppu->scanline_sprites[i].id & 0xFE) + 1) << 4) | ((7 - ppu->scanline - ppu->scanline_sprites[i].y) & 0x07));
+                        }
+                        else {
+                            //reading bottom half tile
+                            sprite_pattern_addr_lo = (((ppu->scanline_sprites[i].id & 0x01) << 12) | ((ppu->scanline_sprites[i].id & 0xFE) << 4) | ((7 - ppu->scanline - ppu->scanline_sprites[i].y) & 0x07));
+                        }
+                    }
+                }
+                sprite_pattern_addr_hi = sprite_pattern_addr_lo + 8;
+
+                //read address to find the tiles
+                sprite_pattern_bits_lo = ppu->mem[sprite_pattern_addr_lo];
+                sprite_pattern_bits_hi = ppu->mem[sprite_pattern_addr_hi];
+                
+                //if the sprite is flipped, flip the pattern bytes
+                if (ppu->scanline_sprites[i].attribute & 0x40) {
+                    sprite_pattern_bits_lo = flipbyte(sprite_pattern_bits_lo);
+                    sprite_pattern_bits_hi = flipbyte(sprite_pattern_bits_hi);
+                }
+                //load patterns into shift registers
+                ppu->oam_pattern_shift_lo[i] = sprite_pattern_bits_lo;
+                ppu->oam_pattern_shift_hi[i] = sprite_pattern_bits_hi;
+            }
+        }
     }
 
     //just exited visible scanline
@@ -316,6 +430,7 @@ void Ppu_init(Ppu *ppu) {
     unsigned char bg_pixel = 0x00;
     unsigned char bg_palette = 0x00;
 
+    //background
     //if rendering is on
     if ((ppu->ppumask & 0x08) == 0x08) {
         unsigned short bit_mux = 0x8000 >> ppu->fine_x;
@@ -327,9 +442,20 @@ void Ppu_init(Ppu *ppu) {
         unsigned char bg_pal1 = (ppu->bg_shifter_palette[1] & bit_mux) > 0;
         bg_palette = (bg_pal1 << 1) | bg_pal0;
     }
+
+    //foreground
+    //if rendering is on
+    unsigned char fg_pixel = 0;
+    unsigned char fg_palette = 0;
+    unsigned char fg_priority = 0;
+    if ((ppu->ppumask & 0x10) == 0x10) {
+        ppu->spriteZeroBeingRendered = 0;
+    }
+
     if ((ppu->scanline >= 0) && (ppu->scanline <= 239) && (ppu->cycle >= 1) && (ppu->cycle <= 256)) {
         ppu->graphics.game_viewport[(ppu->cycle - 1) + (SCREEN_WIDTH * ppu->scanline)] = Ppu_getPixelVal(ppu, bg_pixel, bg_palette);
     }
+
     //incrementing scanline and/or cycle
     ppu->cycle += 1;
     if (ppu->cycle >= 341) {

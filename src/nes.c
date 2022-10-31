@@ -8,7 +8,7 @@ void Nes_loadCartridge(Nes *nes, char *filename) {
 
 void Nes_init(Nes *nes) {
     Cpu_powerUp(&(nes->cpu));
-    Nes_loadCartridge(nes, "../roms/nestest.nes");
+    Nes_loadCartridge(nes, "../roms/dh.nes");
     nes->globalCyclesCounter = 0;
 }
 
@@ -43,14 +43,40 @@ void Nes_updateController(Nes *nes) {
 
 void Nes_mainLoop(Nes *nes) {
     while (1) {
-        Nes_updateController(nes);
-        Cpu_decode(&(nes->cpu));
-        unsigned char cpu_clocks = Cpu_time(&(nes->cpu));
-        while (cpu_clocks > 0) {
-            Ppu_tick(&(nes->cpu.ppu));
-            Ppu_tick(&(nes->cpu.ppu));
-            Ppu_tick(&(nes->cpu.ppu));
-            cpu_clocks--;
+        Ppu_tick(&(nes->cpu.ppu));
+        if (nes->globalCyclesCounter % 3 == 0) {
+            if (nes->cpu.dma_transfer) {
+                //will start dma transfer
+                if (nes->cpu.dma_dummy) {
+                    //needs to wait for even cycle
+                    if ((nes->globalCyclesCounter % 2) == 1) {
+                        //cycle is odd
+                        nes->cpu.dma_dummy = 0x00;
+                    }
+                }
+                else {
+                    //dma begins
+                    if ((nes->globalCyclesCounter % 2) == 0) {
+                        //fetches data to write in memory
+                        nes->cpu.dma_data = nes->cpu.mem[(nes->cpu.dma_page << 8) | nes->cpu.dma_addr];
+                    }
+                    else {
+                        //write to ppu oam on odd clock cycles
+                        nes->cpu.ppu.pOam[nes->cpu.dma_addr] = nes->cpu.dma_data;
+                        nes->cpu.dma_addr += 1;
+                        if (nes->cpu.dma_addr == 0x00) {
+                            //page has ended. dma transfer has finished.
+                            nes->cpu.dma_transfer = 0x00;
+                            nes->cpu.dma_dummy = 0x01;
+                        }
+                    }
+                }
+            }
+            else {
+                //no dma transfer. Cpu can execute normally
+                Nes_updateController(nes);
+                Cpu_tick(&(nes->cpu));
+            }
         }
         nes->globalCyclesCounter += 1;
     }
