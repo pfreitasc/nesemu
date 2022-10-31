@@ -30,26 +30,27 @@ unsigned char Cpu_read(Cpu *cpu, unsigned short addr) {
     unsigned char data = cpu->mem[addr];
     //printf("%02X ", data);
     //if reading from ppu registers
-    if (((addr >= 0x2000) && (addr <= 0x2007)) || (addr == 4014)) {
+    if (((addr >= 0x2000) && (addr <= 0x2007)) || (addr == 0x4014)) {
         data = Ppu_read(&(cpu->ppu), addr);
     }
-    else if ((addr >= 0x4016) && (addr <= 4017)) {
+    if ((addr >= 0x4016) && (addr <= 0x4017)) {
         data = (cpu->controller.pad_state[addr & 0x0001] & 0x80) > 0;
         cpu->controller.pad_state[addr & 0x0001] <<= 1;
     }
+    //printf("\nCPU reading\nData: %02X\nAddr: %04X\n", data, addr);
     
     return data;
 }
 
 void Cpu_write(Cpu *cpu, unsigned short addr, unsigned char data) {
     cpu->mem[addr] = data;
-    //printf("%02X ", data);
+    //printf("\nCPU writing\nData: %02X\nAddr: %04X\n", data, addr);
     //if writing to ppu registers
-    if (((addr >= 0x2000) && (addr <= 0x2007)) | (addr == 4014)) {
+    if (((addr >= 0x2000) && (addr <= 0x2007)) | (addr == 0x4014)) {
         //send data do ppu
         Ppu_write(&(cpu->ppu), data, addr);
     }
-    else if ((addr >= 0x4016) && (addr <= 4017)) {
+    if ((addr >= 0x4016) && (addr <= 0x4017)) {
         cpu->controller.pad_state[addr & 0x0001] = cpu->controller.pad[addr & 0x0001];
     }
 }
@@ -644,7 +645,7 @@ void Cpu_decode(Cpu *cpu) {
 
 unsigned char Cpu_time(Cpu *cpu){
     float cycle_time = 1 / ((float) CLOCK_FREQ); //in seconds
-    usleep(cpu->cycleCounter * cycle_time * 1000000);
+    //usleep(cpu->cycleCounter * cycle_time * 1000000);
     cpu->totalCycles += cpu->cycleCounter;
     return cpu->cycleCounter;
 }

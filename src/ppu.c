@@ -48,8 +48,9 @@ unsigned char Ppu_read(Ppu *ppu, unsigned short addr) {
         case 0x4014: //oam
             break;
         default:
+            break;
     }
-    printf("\n-- PPU read --\nreg: %04X\ndata: %02X\n", addr, data);
+    printf("\n-- PPU read --\nreg: %04X\nppuaddr: %04X\ndata: %02X\n", addr, ppu->ppuaddr, data);
     return data;
 }
 
@@ -61,6 +62,7 @@ void Ppu_write(Ppu *ppu, unsigned char data, unsigned short addr) {
         //nametable x and y on the loopy reg
         ppu->t_nametable_x = (data & 0x01);
         ppu->t_nametable_y = (data & 0x02);
+        ppu->t_nametable_y >>= 1;
         break;
     case 0x2001:
         ppu->ppumask = data;
@@ -76,7 +78,7 @@ void Ppu_write(Ppu *ppu, unsigned char data, unsigned short addr) {
             ppu->t_fine_y = data & 0x07;
             ppu->t_coarse_y = data >> 3;
             ppu->ppuscroll = data;
-            ppu->addr_latch = 0;        
+            ppu->addr_latch = 0;  
         }
         break;
     case 0x2006:
@@ -110,10 +112,7 @@ void Ppu_write(Ppu *ppu, unsigned char data, unsigned short addr) {
 
 unsigned int Ppu_getPixelVal(Ppu *ppu, unsigned char pixel, unsigned char pal) {
     unsigned int colored_pixel;
-    if (pixel == 0)
-        colored_pixel = ppu->graphics.palColor[ppu->mem[PALETTE_MEM_START]];
-    else
-        colored_pixel = ppu->graphics.palColor[ppu->mem[PALETTE_MEM_START] + pal*4 + pixel];
+    colored_pixel = ppu->graphics.palColor[ppu->mem[(PALETTE_MEM_START + (pal << 2) + pixel)] & 0x3F];
     return colored_pixel;
 }
 
@@ -206,7 +205,6 @@ void Ppu_init(Ppu *ppu) {
                 ppu->bg_shifter_palette[0] <<= 1;
                 ppu->bg_shifter_palette[1] <<= 1;
             }
-
             switch (ppu->cycle % 8) {
                 case 1: //
                     //load the next BG tile pattern into the shifters
@@ -236,8 +234,9 @@ void Ppu_init(Ppu *ppu) {
                 case 6: //Low BG tile byte (cycle = 6)
                     ppu->bg_next_tile_lsb = ppu->mem[(((unsigned short) ppu->ppuctrl & 0x0010) << 8) + ((unsigned short) ppu->bg_next_tile_id << 4) + (ppu->fine_y)];
                     break;
-                case 0: //High BG tile byte (cycle = 8, 0)
-                    ppu->bg_next_tile_lsb = ppu->mem[(((unsigned short) ppu->ppuctrl & 0x0010) << 8) + ((unsigned short) ppu->bg_next_tile_id << 4) + (ppu->fine_y) + 8];
+                case 0: //High BG tile byte (cycle = 8)
+                    ppu->bg_next_tile_msb = ppu->mem[(((unsigned short) ppu->ppuctrl & 0x0010) << 8) + ((unsigned short) ppu->bg_next_tile_id << 4) + (ppu->fine_y) + 8];
+                    //inc x
                     if ((ppu->ppumask & 0x08) | (ppu->ppumask & 0x10)) {
                         if (ppu->coarse_x == 31) {
                             ppu->coarse_x = 0;
@@ -251,53 +250,53 @@ void Ppu_init(Ppu *ppu) {
                     }
                     break;
             }
-            if (ppu->cycle == 256) {
-                //if rendering is on
-                if ((ppu->ppumask & 0x08) | (ppu->ppumask & 0x10)) {
-                    //finished a whole line, got to increment y
-                    if (ppu->fine_y < 7)
-                        ppu->fine_y += 1;
+        }
+        if (ppu->cycle == 256) {
+            //if rendering is on
+            if ((ppu->ppumask & 0x08) | (ppu->ppumask & 0x10)) {
+                //finished a whole line, got to increment y
+                if (ppu->fine_y < 7)
+                    ppu->fine_y += 1;
+                else {
+                    ppu->fine_y = 0;
+                    if (ppu->coarse_y == 29) {
+                        ppu->coarse_y = 0;
+                        ppu->nametable_y ^= 0x01;
+                    }
+                    else if (ppu->coarse_y == 31) {
+                        ppu->coarse_y = 0;
+                    }
                     else {
-                        ppu->fine_y = 0;
-                        if (ppu->coarse_y == 29) {
-                            ppu->coarse_y = 0;
-                            ppu->nametable_y ^= 0x01;
-                        }
-                        else if (ppu->coarse_y == 31) {
-                            ppu->coarse_y = 0;
-                        }
-                        else {
-                            ppu->coarse_y += 1;
-                        }
+                        ppu->coarse_y += 1;
                     }
                 }
             }
-            if (ppu->cycle == 257) {
-                //load the next BG tile palette info to the shifters
-                ppu->bg_shifter_palette[0] &= 0xFF00;
-                ppu->bg_shifter_palette[1] &= 0xFF00;
-                if (ppu->bg_next_tile_palette & 0x01)
-                    ppu->bg_shifter_palette[0] |= 0xFF;
-                if (ppu->bg_next_tile_palette & 0x02)
-                    ppu->bg_shifter_palette[1] |= 0xFF;
-                //whole line done, resetting x to scroll position (in tram)
-                if ((ppu->ppumask & 0x08) | (ppu->ppumask & 0x10)) {
-                    ppu->nametable_x = ppu->t_nametable_x;
-                    ppu->coarse_x = ppu->t_coarse_x;
-                }
+        }
+        if (ppu->cycle == 257) {
+            //load the next BG tile palette info to the shifters
+            ppu->bg_shifter_palette[0] &= 0xFF00;
+            ppu->bg_shifter_palette[1] &= 0xFF00;
+            if (ppu->bg_next_tile_palette & 0x01)
+                ppu->bg_shifter_palette[0] |= 0xFF;
+            if (ppu->bg_next_tile_palette & 0x02)
+                ppu->bg_shifter_palette[1] |= 0xFF;
+            //whole line done, resetting x to scroll position (in tram)
+            if ((ppu->ppumask & 0x08) | (ppu->ppumask & 0x10)) {
+                ppu->nametable_x = ppu->t_nametable_x;
+                ppu->coarse_x = ppu->t_coarse_x;
             }
-            if ((ppu->cycle == 338) || (ppu->cycle == 340)) {
-                //superfluous reads
-                ppu->bg_next_tile_id = ppu->mem[(0x2000 | (Ppu_getVram(ppu) & 0x0FFF))];
-            }
-            if ((ppu->scanline == -1) && (ppu->cycle >= 280) && (ppu->cycle < 305)) {
-                //if rendering is enabled
-                if ((ppu->ppumask & 0x08) | (ppu->ppumask & 0x10)) {
-                    //finished frame, reset y coordinate each tick
-                    ppu->fine_y = ppu->t_fine_y;
-                    ppu->nametable_y = ppu->t_nametable_y;
-                    ppu->coarse_y = ppu->t_coarse_y;
-                }
+        }
+        if ((ppu->cycle == 338) || (ppu->cycle == 340)) {
+            //superfluous reads
+            ppu->bg_next_tile_id = ppu->mem[(0x2000 | (Ppu_getVram(ppu) & 0x0FFF))];
+        }
+        if ((ppu->scanline == -1) && (ppu->cycle >= 280) && (ppu->cycle < 305)) {
+            //if rendering is enabled
+            if ((ppu->ppumask & 0x08) | (ppu->ppumask & 0x10)) {
+                //finished frame, reset y coordinate each tick
+                ppu->fine_y = ppu->t_fine_y;
+                ppu->nametable_y = ppu->t_nametable_y;
+                ppu->coarse_y = ppu->t_coarse_y;
             }
         }
     }
@@ -318,7 +317,7 @@ void Ppu_init(Ppu *ppu) {
     unsigned char bg_palette = 0x00;
 
     //if rendering is on
-    if ((ppu->ppumask & 0x08) | (ppu->ppumask & 0x10)) {
+    if ((ppu->ppumask & 0x08) == 0x08) {
         unsigned short bit_mux = 0x8000 >> ppu->fine_x;
         unsigned char p0_pixel = (ppu->bg_shifter_pattern[0] & bit_mux) > 0;
         unsigned char p1_pixel = (ppu->bg_shifter_pattern[1] & bit_mux) > 0;

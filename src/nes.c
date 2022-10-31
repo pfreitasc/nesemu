@@ -15,25 +15,27 @@ void Nes_init(Nes *nes) {
 void Nes_updateController(Nes *nes) {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-        nes->cpu.controller.pad[0] = 0;
         if (event.type == SDL_KEYDOWN) {
+            nes->cpu.controller.pad[0] = 0;
             if (event.key.keysym.sym == SDLK_x)
-                    nes->cpu.controller.pad[0] |= 0x80;
+                nes->cpu.controller.pad[0] |= 0x80;
             if (event.key.keysym.sym == SDLK_z)
-                    nes->cpu.controller.pad[0] |= 0x40;
+                nes->cpu.controller.pad[0] |= 0x40;
             if (event.key.keysym.sym == SDLK_a)
-                    nes->cpu.controller.pad[0] |= 0x20;
+                nes->cpu.controller.pad[0] |= 0x20;
             if (event.key.keysym.sym == SDLK_s)
-                    nes->cpu.controller.pad[0] |= 0x10;
+                nes->cpu.controller.pad[0] |= 0x10;
             if (event.key.keysym.sym == SDLK_UP)
-                    nes->cpu.controller.pad[0] |= 0x08;
+                nes->cpu.controller.pad[0] |= 0x08;
             if (event.key.keysym.sym == SDLK_DOWN)
-                    nes->cpu.controller.pad[0] |= 0x04;
+                nes->cpu.controller.pad[0] |= 0x04;
             if (event.key.keysym.sym == SDLK_LEFT)
-                    nes->cpu.controller.pad[0] |= 0x02;
+                nes->cpu.controller.pad[0] |= 0x02;
             if (event.key.keysym.sym == SDLK_RIGHT)
-                    nes->cpu.controller.pad[0] |= 0x01;
-            }
+                nes->cpu.controller.pad[0] |= 0x01;
+        }
+        if (event.type == SDL_KEYUP) {
+            nes->cpu.controller.pad[0] = 0;
         }
     }
     printf("\nController 0: %02X\n", nes->cpu.controller.pad[0]);
@@ -44,9 +46,11 @@ void Nes_mainLoop(Nes *nes) {
         Nes_updateController(nes);
         Cpu_decode(&(nes->cpu));
         unsigned char cpu_clocks = Cpu_time(&(nes->cpu));
-        unsigned char i;
-        for (i = 0; i < cpu_clocks * 3; i++) {
+        while (cpu_clocks > 0) {
             Ppu_tick(&(nes->cpu.ppu));
+            Ppu_tick(&(nes->cpu.ppu));
+            Ppu_tick(&(nes->cpu.ppu));
+            cpu_clocks--;
         }
         nes->globalCyclesCounter += 1;
     }

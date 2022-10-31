@@ -1432,10 +1432,7 @@ void BRK(Cpu *cpu, int addr_mode) {
 
     //timing adjustments
     cpu->cycleCounter += 5;
-
-    printf("\n$6000: %02X\n", cpu->mem[0x6000]);
  }
-
 
 void RTI(Cpu *cpu, int addr_mode) {
     #ifdef DEBUG
