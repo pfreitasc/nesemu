@@ -337,7 +337,7 @@ unsigned char flipbyte (unsigned char b) {
                     if (ppu->sprite_count < 8) {
                         //check if there might be a sprite 0 hit
                         if (nOamEntry == 0) {  
-                            ppu->spriteZeroHitPossible == 0x01;
+                            ppu->spriteZeroHitPossible = 0x01;
                         }
                         //copy sprite from oam to next line sprites
                         ppu->scanline_sprites[ppu->sprite_count].y = ppu->oam[nOamEntry].y;
@@ -427,10 +427,10 @@ unsigned char flipbyte (unsigned char b) {
     }
 
     //composing screen
-    unsigned char bg_pixel = 0x00;
-    unsigned char bg_palette = 0x00;
 
     //background
+    unsigned char bg_pixel = 0x00;
+    unsigned char bg_palette = 0x00;
     //if rendering is on
     if ((ppu->ppumask & 0x08) == 0x08) {
         unsigned short bit_mux = 0x8000 >> ppu->fine_x;
@@ -444,16 +444,74 @@ unsigned char flipbyte (unsigned char b) {
     }
 
     //foreground
-    //if rendering is on
     unsigned char fg_pixel = 0;
     unsigned char fg_palette = 0;
     unsigned char fg_priority = 0;
+    //if rendering is on
     if ((ppu->ppumask & 0x10) == 0x10) {
         ppu->spriteZeroBeingRendered = 0;
+        unsigned char i;
+        for (i = 0; i < ppu->sprite_count; i++) {
+            if (ppu->scanline_sprites[i].x == 0) {
+                unsigned char fg_pixel_lo = (ppu->oam_pattern_shift_lo[i]) > 0;
+                unsigned char fg_pixel_hi = (ppu->oam_pattern_shift_hi[i]) > 0;
+                fg_pixel = (fg_pixel_hi << 1) | (fg_pixel_lo);
+                fg_palette = (ppu->scanline_sprites[i].attribute & 0x03) + 0x04;
+                fg_priority = (ppu->scanline_sprites[i].attribute & 0x20) == 0;
+
+                if (fg_pixel != 0) {
+                    if (i == 0)
+                        ppu->spriteZeroBeingRendered = 0x01;
+                    break;
+                }
+            }
+        }
+    }
+
+    //deciding the final pixel from bg and fg pixels
+    unsigned char pixel = 0x00;
+    unsigned char palette = 0x00;
+
+    if ((bg_pixel == 0) && (fg_pixel == 0)) {
+        pixel = 0x00;
+        palette = 0x00;
+    }
+    if ((bg_pixel == 0) && (fg_pixel > 0)) {
+        pixel = fg_pixel;
+        palette = fg_palette;
+    }
+    if ((bg_pixel > 0) && (fg_pixel == 0)) {
+        pixel = bg_pixel;
+        palette = bg_palette;
+    }
+    if ((bg_pixel > 0) && (fg_pixel > 0)) {
+        if (fg_priority) {
+            //foreground has priority
+            pixel = fg_pixel;
+            palette = fg_palette;
+        }
+        else {
+            pixel = bg_pixel;
+            palette = bg_palette;
+
+        }
+        //sprite 0 hit detection
+        if (ppu->spriteZeroHitPossible && ppu->spriteZeroBeingRendered) {
+            if ((ppu->ppumask & 0x08) | (ppu->ppumask & 0x10)) { //check if both bg and fg are on
+                if (~((ppu->ppumask & 0x02) | (ppu->ppumask & 0x04))) { 
+                    if ((ppu->cycle >= 9) && (ppu->cycle < 258))
+                        ppu->ppustatus |= 0x40;
+                }
+                else {
+                    if ((ppu->cycle >= 1) && (ppu->cycle < 258))
+                        ppu->ppustatus |= 0x40;
+                }
+            }
+        }
     }
 
     if ((ppu->scanline >= 0) && (ppu->scanline <= 239) && (ppu->cycle >= 1) && (ppu->cycle <= 256)) {
-        ppu->graphics.game_viewport[(ppu->cycle - 1) + (SCREEN_WIDTH * ppu->scanline)] = Ppu_getPixelVal(ppu, bg_pixel, bg_palette);
+        ppu->graphics.game_viewport[(ppu->cycle - 1) + (SCREEN_WIDTH * ppu->scanline)] = Ppu_getPixelVal(ppu, pixel, palette);
     }
 
     //incrementing scanline and/or cycle
