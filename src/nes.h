@@ -3,6 +3,7 @@
 
 #include "cpu.h"
 #include "cartridge.h"
+#define DEBUG 1
 
 typedef struct {
     Cpu cpu;

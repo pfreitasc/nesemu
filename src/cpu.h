@@ -12,7 +12,6 @@
 #define CLOCK_FREQ 1790000
 #define IRQ_START 0xFFFE
 #define STACK_START 0x0100
-#define DEBUG 1
 
 enum addressMode {
     acc,

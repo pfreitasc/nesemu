@@ -42,12 +42,16 @@ unsigned char Ppu_read(Ppu *ppu, unsigned short addr) {
         default:
             break;
     }
+    #ifdef DEBUG
     printf("\n-- PPU read --\nreg: %04X\nppuaddr: %04X\ndata: %02X\n", addr, ppu->ppuaddr, data);
+    #endif
     return data;
 }
 
 void Ppu_write(Ppu *ppu, unsigned char data, unsigned short addr) {
+    #ifdef DEBUG
     printf("\n-- PPU write --\nreg: %04X\nppuaddr: %04X\ndata: %02X\n", addr, ppu->ppuaddr, data);
+    #endif
     switch (addr) {
     case 0x2000:
         ppu->ppuctrl = data;
@@ -202,8 +206,13 @@ unsigned char flipbyte (unsigned char b) {
         //on the pre-render scanline
         if ((ppu->scanline == -1) && (ppu->cycle == 1)) {
             //entering a new frame, clear:
-            //VBlank, Sprite 0, Overflow
+            //VBlank, Sprite 0, Overflow, sprite shifters
             ppu->ppustatus &= 0x7F;
+            int i;
+            for (i = 0; i < 8; i++) {
+                ppu->oam_pattern_shift_lo[i] = 0;
+                ppu->oam_pattern_shift_hi[i] = 0;
+            }
         }
         if (((ppu->cycle >= 1) && (ppu->cycle < 258)) || ((ppu->cycle >= 321) && (ppu->cycle < 338))) {
             //if BG is enabled in ppumask
@@ -213,6 +222,19 @@ unsigned char flipbyte (unsigned char b) {
                 ppu->bg_shifter_pattern[1] <<= 1;
                 ppu->bg_shifter_palette[0] <<= 1;
                 ppu->bg_shifter_palette[1] <<= 1;
+            }
+            // if FG is enabled in ppumask
+            if (((ppu->ppumask & 0x10) == 0x10) && (ppu->cycle >= 1) && (ppu->cycle < 258)) {
+                //shift FG shifters
+                unsigned char i;
+                for (i = 0; i < ppu->sprite_count; i++) {
+                    if (ppu->scanline_sprites[i].x > 0)
+                        ppu->scanline_sprites[i].x -= 1;
+                    else {
+                        ppu->oam_pattern_shift_lo[i] <<= 1;
+                        ppu->oam_pattern_shift_hi[i] <<= 1;
+                    }
+                }
             }
             switch (ppu->cycle % 8) {
                 case 1: //
@@ -331,7 +353,7 @@ unsigned char flipbyte (unsigned char b) {
             unsigned char nOamEntry = 0;
             while ((nOamEntry < 64) && (ppu->sprite_count < 9)) {
                 //calculate if sprite is visible
-                unsigned char diff = ((unsigned short) ppu->scanline - (unsigned short)ppu->oam[nOamEntry].y);
+                short diff = ((unsigned short) ppu->scanline - (unsigned short)ppu->oam[nOamEntry].y);
                 if ((diff >= 0) && (diff < ((ppu->ppuctrl & 0x20) ? 16 : 8))) {
                     //sprite is visible
                     if (ppu->sprite_count < 8) {
@@ -359,8 +381,10 @@ unsigned char flipbyte (unsigned char b) {
             unsigned char i;
             for (i = 0; i < ppu->sprite_count; i++) {
                 //find patterns for each sprite
-                unsigned char sprite_pattern_bits_lo, sprite_pattern_bits_hi;
-                unsigned char sprite_pattern_addr_lo, sprite_pattern_addr_hi;
+                unsigned char sprite_pattern_bits_lo = 0;
+                unsigned char sprite_pattern_bits_hi = 0;
+                unsigned short sprite_pattern_addr_lo = 0;
+                unsigned short sprite_pattern_addr_hi = 0;
                 if ((ppu->ppuctrl & 0x20) == 0) {
                     //8x8 sprite mode
                     if ((ppu->scanline_sprites[i].attribute & 0x80) == 0) {
@@ -453,8 +477,8 @@ unsigned char flipbyte (unsigned char b) {
         unsigned char i;
         for (i = 0; i < ppu->sprite_count; i++) {
             if (ppu->scanline_sprites[i].x == 0) {
-                unsigned char fg_pixel_lo = (ppu->oam_pattern_shift_lo[i]) > 0;
-                unsigned char fg_pixel_hi = (ppu->oam_pattern_shift_hi[i]) > 0;
+                unsigned char fg_pixel_lo = (ppu->oam_pattern_shift_lo[i] & 0x80) > 0;
+                unsigned char fg_pixel_hi = (ppu->oam_pattern_shift_hi[i] & 0x80) > 0;
                 fg_pixel = (fg_pixel_hi << 1) | (fg_pixel_lo);
                 fg_palette = (ppu->scanline_sprites[i].attribute & 0x03) + 0x04;
                 fg_priority = (ppu->scanline_sprites[i].attribute & 0x20) == 0;
@@ -493,11 +517,10 @@ unsigned char flipbyte (unsigned char b) {
         else {
             pixel = bg_pixel;
             palette = bg_palette;
-
         }
         //sprite 0 hit detection
-        if (ppu->spriteZeroHitPossible && ppu->spriteZeroBeingRendered) {
-            if ((ppu->ppumask & 0x08) | (ppu->ppumask & 0x10)) { //check if both bg and fg are on
+        if ((ppu->spriteZeroHitPossible & ppu->spriteZeroBeingRendered) == 0x01) {
+            if (((ppu->ppumask & 0x08) == 0x08) && ((ppu->ppumask & 0x10) == 0x10)) { //check if both bg and fg are on
                 if (~((ppu->ppumask & 0x02) | (ppu->ppumask & 0x04))) { 
                     if ((ppu->cycle >= 9) && (ppu->cycle < 258))
                         ppu->ppustatus |= 0x40;

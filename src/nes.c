@@ -8,7 +8,7 @@ void Nes_loadCartridge(Nes *nes, char *filename) {
 
 void Nes_init(Nes *nes) {
     Cpu_powerUp(&(nes->cpu));
-    Nes_loadCartridge(nes, "../roms/DK.nes");
+    Nes_loadCartridge(nes, "../roms/smb.nes");
     nes->globalCyclesCounter = 0;
 }
 
@@ -38,7 +38,7 @@ void Nes_updateController(Nes *nes) {
             nes->cpu.controller.pad[0] = 0;
         }
     }
-    printf("\nController 0: %02X\n", nes->cpu.controller.pad[0]);
+    //printf("\nController 0: %02X\n", nes->cpu.controller.pad[0]);
 }
 
 void Nes_mainLoop(Nes *nes) {
