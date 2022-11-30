@@ -1,5 +1,5 @@
-Emulador de Nintendo Entertainment System
+<h1>Trabalho de Conclusão do Curso de Engenharia de Computação</h1>
 
-Pedro Freitas de Carvalho
+<h2>Emulador de Nintendo Entertainment System</h2>
 
-Trabalho de Conclusão do Curso de Engenharia de Computação
+Desenvolvido por Pedro Freitas de Carvalho, baseado em: https://github.com/OneLoneCoder/olcNES
